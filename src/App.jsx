@@ -773,10 +773,10 @@ export default function App() {
           }}>
             <Lock size={48} color="var(--accent)" style={{ margin: '0 auto 16px' }} />
             <h3 style={{ fontSize: '1.3rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 6 }}>
-              Альбом заблоковано ключем
+              {t.albumLockedWithKey || "Альбом заблоковано ключем"}
             </h3>
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: 20, maxWidth: 440, margin: '0 auto 20px' }}>
-              Треки та конфіденційні матеріали приховані. Введіть згенерований одноразовий пароль для перегляду.
+              {t.albumLockedNotice || "Треки та конфіденційні матеріали приховані. Введіть згенерований одноразовий пароль для перегляду."}
             </p>
             <button
               onClick={() => setIsAlbumKeyModalOpen(true)}
@@ -784,7 +784,7 @@ export default function App() {
               style={{ padding: '10px 24px' }}
             >
               <Unlock size={15} />
-              <span>Ввести пароль розшифрування</span>
+              <span>{t.enterKeyToDecryptBtn || "Ввести пароль розшифрування"}</span>
             </button>
           </div>
         ) : (
