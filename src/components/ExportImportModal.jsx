@@ -28,11 +28,11 @@ export function ExportImportModal({
 
     if (shouldEncrypt) {
       if (!exportPassword || exportPassword.length < 4) {
-        setExportError("Пароль має містити щонайменше 4 символи");
+        setExportError(t.passMin4 || "Пароль має містити щонайменше 4 символи");
         return;
       }
       if (exportPassword !== exportConfirmPassword) {
-        setExportError("Паролі не збігаються");
+        setExportError(t.passwordsMismatch || "Паролі не збігаються");
         return;
       }
 
@@ -58,11 +58,11 @@ export function ExportImportModal({
         downloadAnchor.click();
         downloadAnchor.remove();
 
-        setImportStatus({ type: "success", msg: "Зашифрований файл успішно завантажено!" });
+        setImportStatus({ type: "success", msg: t.fileEncryptedSuccess || "Зашифрований файл успішно завантажено!" });
         setTimeout(() => onClose(), 1500);
       } catch (err) {
         console.error(err);
-        setExportError("Помилка при шифруванні файлу");
+        setExportError(t.fileEncryptError || "Помилка при шифруванні файлу");
       }
       return;
     }
@@ -117,7 +117,7 @@ export function ExportImportModal({
     e.preventDefault();
     setDecryptError("");
     if (!decryptInputPassword) {
-      setDecryptError("Введіть пароль");
+      setDecryptError(t.enterPassword || "Введіть пароль");
       return;
     }
 
@@ -128,16 +128,16 @@ export function ExportImportModal({
       if (Array.isArray(decryptedAlbums) && decryptedAlbums.length > 0) {
         onImportAlbums(decryptedAlbums);
         setPendingEncryptedData(null);
-        setImportStatus({ type: "success", msg: "Файл успішно розшифровано та імпортовано!" });
+        setImportStatus({ type: "success", msg: t.fileImportSuccess || "Файл успішно розшифровано та імпортовано!" });
         setTimeout(() => {
           onClose();
         }, 1200);
       } else {
-        setDecryptError("Невірний пароль або пошкоджений файл");
+        setDecryptError(t.invalidPassOrFile || "Невірний пароль або пошкоджений файл");
       }
     } catch (err) {
       console.error(err);
-      setDecryptError("Невірний пароль розшифрування");
+      setDecryptError(t.invalidPassOrFile || "Невірний пароль розшифрування");
     }
   };
 
@@ -185,12 +185,12 @@ export function ExportImportModal({
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
               <Lock size={20} color="var(--accent)" />
               <strong style={{ fontSize: "1rem", color: "var(--text-primary)" }}>
-                Файл захищено шифруванням AES-256
+                {t.fileProtectedAes || "Файл захищено шифруванням AES-256"}
               </strong>
             </div>
 
             <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)", margin: "0 0 14px" }}>
-              Цей файл експортовано із захисним паролем. Введіть пароль для відкриття на цьому комп'ютері:
+              {t.fileProtectedDesc || "Цей файл експортовано із захисним паролем. Введіть пароль для відкриття:"}
             </p>
 
             <form onSubmit={handleDecryptImport} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -198,7 +198,7 @@ export function ExportImportModal({
                 type="password"
                 value={decryptInputPassword}
                 onChange={(e) => setDecryptInputPassword(e.target.value)}
-                placeholder="Введіть пароль розшифрування..."
+                placeholder={t.decryptPasswordPlaceholder || "Введіть пароль розшифрування..."}
                 className="input"
                 autoFocus
                 style={{ padding: "10px 14px" }}
@@ -213,14 +213,14 @@ export function ExportImportModal({
               <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
                 <button type="submit" className="btn btn-primary" style={{ flex: 1 }}>
                   <ShieldCheck size={14} />
-                  <span>Розшифрувати та імпортувати</span>
+                  <span>{t.decryptAndImport || "Розшифрувати та імпортувати"}</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setPendingEncryptedData(null)}
                   className="btn btn-secondary"
                 >
-                  Скасувати
+                  {t.cancel || "Скасувати"}
                 </button>
               </div>
             </form>
@@ -243,7 +243,7 @@ export function ExportImportModal({
               </div>
               
               <p style={{ fontSize: "0.82rem", color: "var(--text-secondary)", margin: "0 0 14px" }}>
-                Збережіть файл проєкту на комп'ютер, щоб відкрити його на іншому пристрої або створити резервну копію.
+                {t.exportDesc || "Збережіть файл проєкту на комп'ютер..."}
               </p>
 
               {/* Checkbox: Encrypt with Password */}
@@ -276,7 +276,7 @@ export function ExportImportModal({
                     type="password"
                     value={exportPassword}
                     onChange={(e) => setExportPassword(e.target.value)}
-                    placeholder="Пароль для захисту файлу..."
+                    placeholder={t.filePassPlaceholder || "Пароль для захисту файлу..."}
                     className="input"
                     style={{ padding: "8px 12px", fontSize: "0.85rem" }}
                   />
@@ -284,7 +284,7 @@ export function ExportImportModal({
                     type="password"
                     value={exportConfirmPassword}
                     onChange={(e) => setExportConfirmPassword(e.target.value)}
-                    placeholder="Підтвердіть пароль..."
+                    placeholder={t.confirmFilePassPlaceholder || "Підтвердіть пароль..."}
                     className="input"
                     style={{ padding: "8px 12px", fontSize: "0.85rem" }}
                   />
@@ -321,7 +321,7 @@ export function ExportImportModal({
               </div>
 
               <p style={{ fontSize: "0.82rem", color: "var(--text-secondary)", margin: "0 0 14px" }}>
-                Завантажте збережений файл (.json або .tracker) з цього чи іншого комп'ютера.
+                {t.importDesc || "Завантажте збережений файл з цього чи іншого пристрою."}
               </p>
 
               <label className="btn btn-secondary" style={{

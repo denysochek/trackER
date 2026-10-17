@@ -709,6 +709,7 @@ export default function App() {
           onEditAlbum={() => setIsEditAlbumModalOpen(true)}
           onDeleteAlbum={handleDeleteAlbum}
           onOpenStudioSheet={() => setIsStudioSheetModalOpen(true)}
+          onOpenExportImport={() => setIsExportImportModalOpen(true)}
           onOpenAlbumKey={() => setIsAlbumKeyModalOpen(true)}
           onOpenShareModal={() => setIsShareModalOpen(true)}
           onTriggerEgg={(egg) => setActiveEgg(egg)}

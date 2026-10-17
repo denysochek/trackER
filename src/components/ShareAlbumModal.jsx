@@ -93,7 +93,7 @@ export function ShareAlbumModal({
       setTargetUsername("");
     } catch (err) {
       console.error(err);
-      setShareStatus({ type: "error", message: "Помилка передачі альбому." });
+      setShareStatus({ type: "error", message: t.shareErrorMsg || "Помилка передачі альбому." });
     } finally {
       setIsSubmitting(false);
     }

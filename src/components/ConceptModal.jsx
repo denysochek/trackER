@@ -38,7 +38,7 @@ export function ConceptModal({
               className="btn btn-secondary btn-sm"
             >
               {isEditing ? <Eye size={13} /> : <Edit3 size={13} />}
-              <span>{isEditing ? "Перегляд" : "Редагувати"}</span>
+              <span>{isEditing ? (t.viewMode || "Перегляд") : (t.editMode || "Редагувати")}</span>
             </button>
             <button onClick={onClose} className="btn-ghost btn-icon">
               <X size={17} />
@@ -51,7 +51,7 @@ export function ConceptModal({
             <textarea
               value={conceptText}
               onChange={(e) => setConceptText(e.target.value)}
-              placeholder="Додайте історію альбому, мудборд, саунд-дизайн нотатки..."
+              placeholder={t.conceptPlaceholder || "Додайте історію альбому, мудборд, саунд-дизайн нотатки..."}
               className="textarea"
               style={{ minHeight: 280, fontFamily: "var(--font-mono)", fontSize: "0.85rem", lineHeight: 1.6 }}
             />
@@ -96,7 +96,7 @@ export function ConceptModal({
                 </p>
                 <button onClick={() => setIsEditing(true)} className="btn btn-primary btn-sm">
                   <Edit3 size={13} />
-                  Редагувати
+                  {t.editMode || "Редагувати"}
                 </button>
               </div>
             )}

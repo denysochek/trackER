@@ -8,7 +8,8 @@ import {
   FileEdit,
   Disc,
   Share2,
-  FileText
+  FileText,
+  Download
 } from "lucide-react";
 import { calculateAlbumProgress, calculateStageBreakdown, calculateTrackScore } from "../constants";
 import { EasterNumberTrigger } from "./EasterEggs";
@@ -22,6 +23,7 @@ export function AlbumHero({
   onOpenAlbumKey,
   onOpenShareModal,
   onOpenStudioSheet,
+  onOpenExportImport,
   onTriggerEgg
 }) {
   if (!album) return null;
@@ -142,6 +144,16 @@ export function AlbumHero({
               >
                 <Share2 size={13} color="var(--accent)" />
                 <span>{t.shareAlbum || "Поділитися"}</span>
+              </button>
+
+              {/* Download / Backup & Restore Button */}
+              <button
+                onClick={onOpenExportImport}
+                className="btn btn-secondary btn-sm"
+                title={t.exportImport || "Завантажити / Резервна копія"}
+              >
+                <Download size={13} color="var(--accent)" />
+                <span>{t.downloadBtn || "Завантажити"}</span>
               </button>
 
               

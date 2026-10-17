@@ -1,5 +1,35 @@
 export const TRANSLATIONS = {
   uk: {
+    // Concept & Big Board
+    viewMode: "Перегляд",
+    editMode: "Редагувати",
+    conceptPlaceholder: "Додайте історію альбому, мудборд, саунд-дизайн нотатки...",
+    closeEsc: "Закрити (ESC)",
+    privateBoardTitle: "Особиста дошка",
+    publicBoardTitle: "Загальна дошка",
+    addBtn: "Додати",
+    publishBtn: "Опублікувати",
+    copyCardTip: "Натисніть на картку, щоб переглянути інфо або скопіювати текст",
+    deleteEntry: "Видалити цей запис",
+    
+    // Export / Import
+    passMin4: "Пароль має містити щонайменше 4 символи",
+    passwordsMismatch: "Паролі не збігаються",
+    fileEncryptedSuccess: "Зашифрований файл успішно завантажено!",
+    fileEncryptError: "Помилка при шифруванні файлу",
+    enterPassword: "Введіть пароль",
+    fileImportSuccess: "Файл успішно розшифровано та імпортовано!",
+    invalidPassOrFile: "Невірний пароль або пошкоджений файл",
+    fileProtectedAes: "Файл захищено шифруванням AES-256",
+    fileProtectedDesc: "Цей файл експортовано із захисним паролем. Введіть пароль для відкриття на цьому пристрої:",
+    decryptPasswordPlaceholder: "Введіть пароль розшифрування...",
+    decryptAndImport: "Розшифрувати та імпортувати",
+    exportDesc: "Збережіть файл проєкту на комп'ютер, щоб відкрити його на іншому пристрої або створити резервну копію.",
+    filePassPlaceholder: "Пароль для захисту файлу...",
+    confirmFilePassPlaceholder: "Підтвердіть пароль...",
+    importDesc: "Завантажте збережений файл (.json або .tracker) з цього чи іншого пристрою.",
+    shareErrorMsg: "Помилка передачі альбому.",
+
     appTitle: "trackER",
     appSubtitle: "Студійна система трекінгу альбомів та треків",
     albums: "Альбоми",
@@ -361,6 +391,36 @@ export const TRANSLATIONS = {
   },
 
   en: {
+    // Concept & Big Board
+    viewMode: "View",
+    editMode: "Edit",
+    conceptPlaceholder: "Add album concept, sonic moodboard, mixing notes...",
+    closeEsc: "Close (ESC)",
+    privateBoardTitle: "Private Board",
+    publicBoardTitle: "Public Board",
+    addBtn: "Add",
+    publishBtn: "Publish",
+    copyCardTip: "Click card to view details or copy text",
+    deleteEntry: "Delete entry",
+    
+    // Export / Import
+    passMin4: "Password must be at least 4 characters",
+    passwordsMismatch: "Passwords do not match",
+    fileEncryptedSuccess: "Encrypted file successfully downloaded!",
+    fileEncryptError: "Error encrypting file",
+    enterPassword: "Enter password",
+    fileImportSuccess: "File successfully decrypted and imported!",
+    invalidPassOrFile: "Invalid password or corrupted file",
+    fileProtectedAes: "File Protected by AES-256 Encryption",
+    fileProtectedDesc: "This file was exported with password protection. Enter password to unlock on this device:",
+    decryptPasswordPlaceholder: "Enter decryption password...",
+    decryptAndImport: "Decrypt & Import",
+    exportDesc: "Save project file to your computer for offline backups or transferring to another studio machine.",
+    filePassPlaceholder: "Password to protect file...",
+    confirmFilePassPlaceholder: "Confirm password...",
+    importDesc: "Load a saved (.json or .tracker) project file from this or another device.",
+    shareErrorMsg: "Error delivering album.",
+
     appTitle: "trackER",
     appSubtitle: "Studio Album & Track Production System",
     albums: "Albums",

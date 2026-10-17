@@ -508,14 +508,7 @@ export function Header({
 
 
 
-          {/* Backup & Restore (Offline) */}
-          <button
-            onClick={onOpenExportImport}
-            className="btn btn-secondary btn-sm"
-            title={t.exportImport}
-          >
-            <Download size={13} />
-          </button>
+
 
           {/* Encrypted User Account Menu */}
           <UserMenu

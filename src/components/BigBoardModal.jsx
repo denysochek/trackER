@@ -255,7 +255,7 @@ export function BigBoardModal({
                 alignItems: 'center',
                 justifyContent: 'center'
               }}
-              title="Закрити (ESC)"
+              title={t.closeEsc || "Закрити (ESC)"}
             >
               <X size={18} />
             </button>
@@ -267,7 +267,7 @@ export function BigBoardModal({
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
           
           {/* ========================================================
-              1. PRIVATE BOARD (Особиста дошка)
+              1. {t.privateBoardTitle || "Особиста дошка"}
               ======================================================== */}
           {boardScope === 'private' && (
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', position: 'relative' }}>
@@ -420,7 +420,7 @@ export function BigBoardModal({
           )}
 
           {/* ========================================================
-              2. PUBLIC COMMUNITY BOARD (Загальна дошка)
+              2. {t.publicBoardTitle || "Загальна дошка"}
               ======================================================== */}
           {boardScope === 'public' && (
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
@@ -522,7 +522,7 @@ export function BigBoardModal({
                           transition: 'all 0.15s ease',
                           position: 'relative'
                         }}
-                        title="Натисніть на картку, щоб переглянути інфо або скопіювати текст"
+                        title={t.copyCardTip || "Натисніть на картку, щоб переглянути інфо або скопіювати текст"}
                       >
                         {/* 1. ONLY TEXT SHOWN HERE (As requested: "просто його текст") */}
                         <div style={{
@@ -606,7 +606,7 @@ export function BigBoardModal({
                                     fontSize: '0.75rem',
                                     fontWeight: 700
                                   }}
-                                  title="Видалити цей запис"
+                                  title={t.deleteEntry || "Видалити цей запис"}
                                 >
                                   {isAdmin && entry.author !== currentUser?.username ? (t.deleteAdmin || 'Видалити (Адмін)') : (t.deletePost || 'Видалити')}
                                 </button>
