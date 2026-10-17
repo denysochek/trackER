@@ -143,9 +143,9 @@ export function AlbumHero({
               <button
                 onClick={onOpenAlbumKey}
                 className="btn btn-secondary btn-sm"
-                title="Пароль альбому"
+                title={t.albumPassword || "Пароль альбому"}
               >
-                {album.isLocked ? '🔒 Заблоковано' : album.masterKeyHash ? '🔑 Ключ активний' : '🔑 Створити ключ'}
+                {album.isLocked ? (t.keyLocked || "🔒 Заблоковано") : album.masterKeyHash ? (t.keyActive || "🔑 Ключ активний") : (t.keyCreate || "🔑 Створити ключ")}
               </button>
 
               <button

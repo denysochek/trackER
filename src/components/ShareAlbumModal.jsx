@@ -43,16 +43,24 @@ export function ShareAlbumModal({
 
   // Generate clean text summary with emoji progress bar
   const generateTextSummary = () => {
+    const isEn = t.language === "Language";
     const barLength = 10;
     const filledBlocks = Math.round((progressPercent / 100) * barLength);
     const emptyBlocks = barLength - filledBlocks;
     const bar = "█".repeat(filledBlocks) + "░".repeat(emptyBlocks);
 
+    const progLabel = isEn ? "Progress" : "Прогрес";
+    const readyLabel = isEn ? "tracks ready" : "треків готово";
+    const genreLabel = isEn ? "Genre" : "Жанр";
+    const releaseLabel = isEn ? "Release" : "Реліз";
+    const tracklistLabel = isEn ? "TRACKLIST" : "ТРЕКЛІСТ";
+    const createdLabel = isEn ? "Created with trackER" : "Створено в trackER";
+
     let text = `📀 ${album.title.toUpperCase()} — ${album.artist || "trackER"}\\n`;
-    text += `📊 Прогрес: ${progressPercent}% [${bar}] (${finishedCount}/${tracks.length} треків готово)\\n`;
-    if (album.genre) text += `🎸 Жанр: ${album.genre}\\n`;
-    if (album.targetDate) text += `🎯 Реліз: ${album.targetDate}\\n`;
-    text += `\\n🎚️ ТРЕКЛІСТ:\\n`;
+    text += `📊 ${progLabel}: ${progressPercent}% [${bar}] (${finishedCount}/${tracks.length} ${readyLabel})\\n`;
+    if (album.genre) text += `🎸 ${genreLabel}: ${album.genre}\\n`;
+    if (album.targetDate) text += `🎯 ${releaseLabel}: ${album.targetDate}\\n`;
+    text += `\\n🎚️ ${tracklistLabel}:\\n`;
 
     tracks.forEach((tr, idx) => {
       const score = calculateTrackScore(tr);
@@ -62,7 +70,7 @@ export function ShareAlbumModal({
       text += `${idx + 1}. ${tr.title} — [${score}/${max}] ${statusIcon}\\n`;
     });
 
-    text += `\\n⚡ Створено в trackER: ${window.location.origin + window.location.pathname}`;
+    text += `\\n⚡ ${createdLabel}: ${window.location.origin + window.location.pathname}`;
     return text;
   };
 
@@ -83,7 +91,7 @@ export function ShareAlbumModal({
       try {
         await navigator.share({
           title: `${album.title} — trackER Album`,
-          text: `Прогрес альбому ${album.title}: ${progressPercent}%`,
+          text: (t.language === 'Language' ? `Album progress ${album.title}: ${progressPercent}%` : `Прогрес альбому ${album.title}: ${progressPercent}%`),
           url: shareUrl
         });
       } catch (err) {

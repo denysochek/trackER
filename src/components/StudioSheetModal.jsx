@@ -77,7 +77,7 @@ export function StudioSheetModal({
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <FileText size={17} color="var(--accent)" />
             <h2 style={{ fontSize: "1.05rem", fontWeight: 700, color: "var(--text-primary)" }}>
-              {t.studioSheetTitle} (Ч/Б Друк • Компактний 1 Лист)
+              {t.studioSheetTitle} ({t.studioSheetSubtitle || 'Ч/Б Друк • 1 Лист'})
             </h2>
           </div>
 
@@ -88,7 +88,7 @@ export function StudioSheetModal({
             </button>
             <button onClick={handlePrint} className="btn btn-primary btn-sm" style={{ padding: "4px 12px", fontSize: "0.78rem" }}>
               <Printer size={12} />
-              <span>Друк / PDF (1 Лист)</span>
+              <span>{t.printPdfBtn || "Друк / PDF (1 Лист)"}</span>
             </button>
             <button onClick={onClose} className="btn-ghost btn-icon" style={{ width: 28, height: 28 }}>
               <X size={15} />
@@ -130,14 +130,14 @@ export function StudioSheetModal({
                 </span>
               </div>
               <div style={{ fontSize: "0.74rem", fontWeight: 600, color: "#222222", marginTop: 2 }}>
-                Виконавець: <strong>{album.artist || "N/A"}</strong> | Жанр: {album.genre || "N/A"} | Реліз: {album.targetDate || "2026"}
+                {t.artist || "Виконавець"}: <strong>{album.artist || "N/A"}</strong> | {t.genre || "Жанр"}: {album.genre || "N/A"} | {t.targetRelease || "Реліз"}: {album.targetDate || "2026"}
               </div>
             </div>
 
             <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
               <div style={{ textAlign: "right" }}>
                 <div style={{ fontSize: "0.72rem", fontWeight: 700, textTransform: "uppercase" }}>
-                  {tracks.filter(t => isTrackFinished(t)).length}/{tracks.length} ГОТОВО
+                  {tracks.filter(t => isTrackFinished(t)).length}/{tracks.length} {t.completedTracks || "ГОТОВО"}
                 </div>
                 <div style={{ fontSize: "0.65rem", color: "#666" }}>
                   {new Date().toLocaleDateString()}
@@ -161,15 +161,15 @@ export function StudioSheetModal({
             <thead>
               <tr style={{ background: "#eaeaea", borderBottom: "1.5px solid #000000" }}>
                 <th style={{ padding: "4px 5px", textAlign: "center", width: 24, border: "1px solid #000" }}>#</th>
-                <th style={{ padding: "4px 6px", textAlign: "left", border: "1px solid #000" }}>Назва композиції</th>
-                <th style={{ padding: "4px 5px", textAlign: "center", width: 80, border: "1px solid #000" }}>Тип</th>
-                <th style={{ padding: "4px 5px", textAlign: "center", width: 45, border: "1px solid #000" }}>BPM</th>
-                <th style={{ padding: "4px 5px", textAlign: "center", width: 55, border: "1px solid #000" }}>Тон</th>
-                <th style={{ padding: "4px 5px", textAlign: "center", width: 75, border: "1px solid #000" }}>Біт</th>
-                <th style={{ padding: "4px 5px", textAlign: "center", width: 85, border: "1px solid #000" }}>Вокал</th>
-                <th style={{ padding: "4px 5px", textAlign: "center", width: 65, border: "1px solid #000" }}>Візуал</th>
-                <th style={{ padding: "4px 5px", textAlign: "center", width: 50, border: "1px solid #000" }}>Бал</th>
-                <th style={{ padding: "4px 5px", textAlign: "center", width: 75, border: "1px solid #000" }}>Статус</th>
+                <th style={{ padding: "4px 6px", textAlign: "left", border: "1px solid #000" }}>{t.trackCol || "Назва композиції"}</th>
+                <th style={{ padding: "4px 5px", textAlign: "center", width: 80, border: "1px solid #000" }}>{t.typeCol || "Тип"}</th>
+                <th style={{ padding: "4px 5px", textAlign: "center", width: 45, border: "1px solid #000" }}>{t.bpmCol || "BPM"}</th>
+                <th style={{ padding: "4px 5px", textAlign: "center", width: 55, border: "1px solid #000" }}>{t.keyCol || "Тон"}</th>
+                <th style={{ padding: "4px 5px", textAlign: "center", width: 75, border: "1px solid #000" }}>{t.beatCol || "Біт"}</th>
+                <th style={{ padding: "4px 5px", textAlign: "center", width: 85, border: "1px solid #000" }}>{t.vocalCol || "Вокал"}</th>
+                <th style={{ padding: "4px 5px", textAlign: "center", width: 65, border: "1px solid #000" }}>{t.visualCol || "Візуал"}</th>
+                <th style={{ padding: "4px 5px", textAlign: "center", width: 50, border: "1px solid #000" }}>{t.scoreCol || "Бал"}</th>
+                <th style={{ padding: "4px 5px", textAlign: "center", width: 75, border: "1px solid #000" }}>{t.statusCol || "Статус"}</th>
               </tr>
             </thead>
             <tbody>
@@ -195,7 +195,7 @@ export function StudioSheetModal({
                       )}
                     </td>
                     <td style={{ padding: "3px 4px", textAlign: "center", border: "1px solid #000", fontWeight: 600, fontSize: "0.68rem" }}>
-                      {isInst ? "Інструм." : isSkit ? "Скіт" : "Пісня"}
+                      {isInst ? (t.trackTypeInstrumental || "Інструм.") : isSkit ? (t.trackTypeSkit || "Скіт") : (t.trackTypeSong || "Пісня")}
                     </td>
                     <td style={{ padding: "3px 4px", textAlign: "center", border: "1px solid #000", fontFamily: "monospace", fontSize: "0.68rem" }}>
                       {tr.bpm || "—"}
@@ -225,7 +225,7 @@ export function StudioSheetModal({
                     </td>
                     {/* Status */}
                     <td style={{ padding: "3px 4px", textAlign: "center", fontWeight: 800, border: "1px solid #000", fontSize: "0.66rem", background: isFin ? "#e6ffe6" : "transparent" }}>
-                      {isFin ? "✓ ГОТОВО" : "В РОБОТІ"}
+                      {isFin ? (t.statusReady || "✓ ГОТОВО") : (t.statusWork || "В РОБОТІ")}
                     </td>
                   </tr>
                 );
@@ -245,11 +245,11 @@ export function StudioSheetModal({
             gap: 16
           }}>
             <div style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-              <strong>Концепція:</strong> {album.concept ? album.concept.replace(/[#*\r\n\-]+/g, ' ').slice(0, 160) : "Студійний продакшн"}
+              <strong>{t.conceptLabel || "Концепція"}:</strong> {album.concept ? album.concept.replace(/[#*\r\n\-]+/g, ' ').slice(0, 160) : "Студійний продакшн"}
             </div>
 
             <div style={{ display: "flex", alignItems: "center", gap: 14, flexShrink: 0 }}>
-              <div>Підпис звукорежисера: __________________</div>
+              <div>{t.engineerSign || "Підпис звукорежисера: __________________"}</div>
               <div style={{ fontSize: "0.64rem", color: "#666" }}>trackER • 1-Page B&W</div>
             </div>
           </div>

@@ -232,9 +232,7 @@ export function BigBoardModal({
               </div>
 
               <div style={{ fontSize: '0.76rem', color: '#666666', marginTop: 3 }}>
-                {boardScope === 'private' 
-                  ? 'Ваш приватний простір для текстів та нотаток (тільки для вас)' 
-                  : 'Спільна дошка думок: відкрита для всіх, писати можуть зареєстровані'}
+                {boardScope === 'private' ? (t.privateBoardDesc || 'Ваш приватний простір для текстів та нотаток') : (t.publicBoardDesc || 'Спільна дошка думок: відкрита для всіх')}
               </div>
             </div>
           </div>
@@ -297,7 +295,7 @@ export function BigBoardModal({
                       color: '#000000'
                     }}
                   >
-                    Суцільне полотно
+                    {t.canvasTab || 'Суцільне полотно'}
                   </button>
                   <button
                     onClick={() => setActivePrivateTab('entries')}
@@ -312,7 +310,7 @@ export function BigBoardModal({
                       color: '#000000'
                     }}
                   >
-                    Окремі чернетки ({privateEntries.length})
+                    {t.draftsTab || 'Окремі чернетки'} ({privateEntries.length})
                   </button>
                 </div>
 
@@ -334,7 +332,7 @@ export function BigBoardModal({
                     }}
                   >
                     {isCopied ? <Check size={12} color="#16a34a" /> : <Copy size={12} />}
-                    <span>{isCopied ? 'Скопійовано' : 'Копіювати все'}</span>
+                    <span>{isCopied ? (t.summaryCopied || 'Скопійовано!') : (t.copyAll || 'Копіювати все')}</span>
                   </button>
                 </div>
               </div>
@@ -344,7 +342,7 @@ export function BigBoardModal({
                   <textarea
                     value={canvasText}
                     onChange={(e) => setCanvasText(e.target.value)}
-                    placeholder="Пишіть тут чорним текстом: рими, рядки пісень, чернетки, треклісти... Все автоматично зберігається тільки на вашому пристрої."
+                    placeholder="{t.canvasPlaceholder || 'Пишіть тут чорним текстом: рими, рядки пісень...'}"
                     className="big-board-textarea"
                     autoFocus
                   />
@@ -358,8 +356,8 @@ export function BigBoardModal({
                     fontSize: '0.78rem',
                     color: '#666666'
                   }}>
-                    <span>Особисте полотно • Чорний текст</span>
-                    <span>Слів: {canvasText.trim() ? canvasText.trim().split(/\s+/).length : 0} | Символів: {canvasText.length}</span>
+                    <span>{t.canvasFooter || 'Особисте полотно • Чорний текст'}</span>
+                    <span>{t.wordsCount || 'Слів'}: {canvasText.trim() ? canvasText.trim().split(/\s+/).length : 0} | {t.charsCount || 'Символів'}: {canvasText.length}</span>
                   </div>
                 </div>
               ) : (
@@ -369,7 +367,7 @@ export function BigBoardModal({
                       type="text"
                       value={newEntryText}
                       onChange={(e) => setNewEntryText(e.target.value)}
-                      placeholder="Додайте новий запис чи рядок..."
+                      placeholder="{t.draftPlaceholder || 'Додайте новий запис чи рядок...'}"
                       style={{
                         flex: 1,
                         padding: '10px 16px',
@@ -440,7 +438,7 @@ export function BigBoardModal({
                         type="text"
                         value={newEntryText}
                         onChange={(e) => setNewEntryText(e.target.value)}
-                        placeholder="Напишіть щось на загальну дошку чорним текстом..."
+                        placeholder="{t.publicPlaceholder || 'Напишіть щось на загальну дошку...'}"
                         style={{
                           flex: 1,
                           padding: '12px 16px',
@@ -504,7 +502,7 @@ export function BigBoardModal({
               <div style={{ flex: 1, padding: '20px 28px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 12 }}>
                 {publicEntries.length === 0 ? (
                   <div style={{ textAlign: 'center', padding: '60px 20px', color: '#777' }}>
-                    Загальна дошка поки що порожня. Залиште свій запис першим!
+                    {t.emptyPublicBoard || 'Загальна дошка поки що порожня. Залиште свій запис першим!'}
                   </div>
                 ) : (
                   publicEntries.map(entry => {
@@ -562,17 +560,17 @@ export function BigBoardModal({
                               {/* Author display */}
                               {!entry.isAnonymous ? (
                                 <span style={{ fontWeight: 600, color: '#111111' }}>
-                                  👤 Автор: {entry.author}
+                                  👤 {t.authorLabel || 'Автор'}: {entry.author}
                                 </span>
                               ) : (
                                 <span>
                                   {isAdmin ? (
                                     <strong style={{ color: '#dc2626' }}>
-                                      🕵️ Адмін-доступ (Анонім: {entry.author})
+                                      🕵️ {t.adminReveal || 'Адмін-доступ (Анонім:'} {entry.author})
                                     </strong>
                                   ) : (
                                     <span style={{ fontStyle: 'italic', color: '#888888' }}>
-                                      (Анонімний запис)
+                                      ({t.anonymousPost || 'Анонімний запис'})
                                     </span>
                                   )}
                                 </span>
@@ -592,7 +590,7 @@ export function BigBoardModal({
                                   fontWeight: 600
                                 }}
                               >
-                                Копіювати текст
+                                {t.copyPostText || 'Копіювати текст'}
                               </button>
 
                               {canDelete && (
@@ -610,7 +608,7 @@ export function BigBoardModal({
                                   }}
                                   title="Видалити цей запис"
                                 >
-                                  {isAdmin && entry.author !== currentUser?.username ? 'Видалити (Адмін)' : 'Видалити'}
+                                  {isAdmin && entry.author !== currentUser?.username ? (t.deleteAdmin || 'Видалити (Адмін)') : (t.deletePost || 'Видалити')}
                                 </button>
                               )}
                             </div>

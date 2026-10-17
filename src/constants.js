@@ -279,3 +279,27 @@ export const INITIAL_ALBUMS = [
     ]
   }
 ];
+
+export const DEMO_ALBUM_EN = {
+  concept: "## Album Concept\n\nFuturistic night drive through a neon metropolis. Blending analog Moog synths, aggressive 808 bass, and cinematic autotuned vocals.\n\n- **Key Mood**: Deep, energetic, nocturnal drive\n- **Sonic References**: Travis Scott, Gesaffelstein, The Weeknd (After Hours)\n- **Studio Chain**: 48kHz / 24-bit, analog mastering chain.",
+  trackNotes: {
+    "tr-1": "Lead album single. Neumann U87 vocal takes. Final mix approved, Spotify Canvas art locked.",
+    "tr-2": "Finish 3D visualizer for YouTube release and add tape delay on outro vocal ad-libs.",
+    "tr-3": "Collaboration track. Beat is dialed in and mixed. Vocal studio tracking session booked next Tuesday.",
+    "tr-4": "Atmospheric instrumental track. Sub-bass sidechain compression needed.",
+    "tr-5": "R&B / Trap ballad. Demo recorded, draft lyrics ready.",
+    "tr-6": "Album outro. Cinematic strings and grand piano. Mastered track ready for release."
+  }
+};
+
+export const DEMO_ALBUM_UK = {
+  concept: "## Концепція альбому\n\nФутуристична нічна подорож крізь неонове кібер-місто. Поєднання аналогових синтезаторів Moog, агресивних 808-х басів та кінематографічного вокалу з автотюном.\n\n- **Ключовий настрій**: Глибокий, енергійний, нічний драйв\n- **Референси звучання**: Travis Scott, Gesaffelstein, The Weeknd (After Hours)\n- **Студійний сетап**: 48kHz / 24-bit, аналоговий майстеринг на фіналі.",
+  trackNotes: {
+    "tr-1": "Головний сингл альбому. Вокал записано на Neumann U87. Фінальний мікс готовий, арт узгоджено для Spotify Canvas.",
+    "tr-2": "Потрібно завершити 3D-відеоряд для YouTube Visualizer та додати ділей на бек-вокали в аутро.",
+    "tr-3": "Колаборація. Біт повністю готовий та зведений. Потрібно переписати другий куплет вокалу в студії наступного вівторка.",
+    "tr-4": "Атмосферний інструментальний трек. Зведення баса потребує сайдчейн-корекції.",
+    "tr-5": "R&B / Trap баладу. Демо-біт записаний, чернетка тексту є.",
+    "tr-6": "Фінал альбому. Епічні струнні та фортепіано. Повністю готовий мастер трек."
+  }
+};

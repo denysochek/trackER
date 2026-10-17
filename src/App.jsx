@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 
 import { translations } from './translations';
-import { INITIAL_ALBUMS, calculateTrackScore, calculateAlbumProgress } from './constants';
+import { INITIAL_ALBUMS, calculateTrackScore, calculateAlbumProgress, DEMO_ALBUM_EN, DEMO_ALBUM_UK } from './constants';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { encryptData, decryptData } from './utils/crypto';
 import { playVinylSnap, playDiscRoll } from './utils/soundEffects';
@@ -195,6 +195,27 @@ export default function App() {
     window.location.hash = "";
     triggerConfetti();
   };
+
+
+  // Synchronize default demo album concept & notes with selected language
+  useEffect(() => {
+    setAlbums(prevAlbums => {
+      const demoData = lang === "en" ? DEMO_ALBUM_EN : DEMO_ALBUM_UK;
+      return prevAlbums.map(alb => {
+        if (alb.id === "album-neon-noir") {
+          return {
+            ...alb,
+            concept: demoData.concept,
+            tracks: alb.tracks.map(tr => ({
+              ...tr,
+              notes: demoData.trackNotes[tr.id] || tr.notes
+            }))
+          };
+        }
+        return alb;
+      });
+    });
+  }, [lang]);
 
   const handleLoginSuccess = (userSession) => {
     setCurrentUser(userSession);
@@ -666,7 +687,7 @@ export default function App() {
                   border: '1.5px solid var(--accent)',
                   padding: '5px 12px'
                 }}
-                title="Поставити диск назад на вертушку"
+                title={t.returnDisc || 'Поставити диск назад'}
               >
                 <Disc3 size={15} color="var(--accent)" />
                 <span style={{ fontWeight: 600 }}>{t.returnDisc || 'Диск на вертушку'}</span>
@@ -678,10 +699,10 @@ export default function App() {
               onClick={() => setIsBigBoardOpen(true)}
               className="btn btn-secondary btn-sm"
               style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: '0.78rem', padding: '5px 12px' }}
-              title="Велика вільна дошка для нотаток, рим та думок простим чорним текстом"
+              title={t.bigBoardDesc || 'Велика вільна дошка'}
             >
               <span style={{ fontSize: '0.95rem' }}>✎</span>
-              <span>Велика дошка думок</span>
+              <span>{t.bigBoardTitle || 'Велика дошка'}</span>
             </button>
           </div>
         </footer>
@@ -736,10 +757,10 @@ export default function App() {
           </div>
           <div>
             <strong style={{ fontSize: '0.88rem', display: 'block', color: 'var(--text-primary)' }}>
-              Диск випав! 💥
+              {t.discFellAlertTitle || 'Диск випав! 💥'}
             </strong>
             <span style={{ fontSize: '0.76rem', color: 'var(--text-muted)' }}>
-              Він покотився на самий низ сторінки
+              {t.discFellAlertDesc || 'Він покотився на самий низ сторінки'}
             </span>
           </div>
         </div>
