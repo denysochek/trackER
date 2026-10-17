@@ -130,4 +130,4 @@ This project is open-source under the [MIT License](LICENSE).
 
 ---
 
-Made with passion for music makers and audio producers worldwide. 🎧
+made by dionisii with love & gemini

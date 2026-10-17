@@ -7,7 +7,8 @@ import {
   Sparkles, 
   FileEdit,
   Disc,
-  Share2
+  Share2,
+  FileText
 } from "lucide-react";
 import { calculateAlbumProgress, calculateStageBreakdown, calculateTrackScore } from "../constants";
 import { EasterNumberTrigger } from "./EasterEggs";
@@ -20,6 +21,7 @@ export function AlbumHero({
   onOpenConceptModal,
   onOpenAlbumKey,
   onOpenShareModal,
+  onOpenStudioSheet,
   onTriggerEgg
 }) {
   if (!album) return null;
@@ -123,6 +125,16 @@ export function AlbumHero({
                 <span>{t.editAlbum}</span>
               </button>
               
+              {/* Studio Checklist Button */}
+              <button
+                onClick={onOpenStudioSheet}
+                className="btn btn-secondary btn-sm"
+                title={t.studioSheet || "Студійний чекліст"}
+              >
+                <FileText size={13} color="var(--accent)" />
+                <span>{t.studioSheet || "Чекліст"}</span>
+              </button>
+
               <button
                 onClick={onOpenShareModal}
                 className="btn btn-secondary btn-sm"

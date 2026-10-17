@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { X, Key, Lock, Unlock, Copy, Check, AlertTriangle, ShieldCheck, Trash2 } from "lucide-react";
+import { X, Key, Copy, Check, Lock, Unlock, Trash2, AlertTriangle, ShieldAlert, HeartHandshake, ShieldCheck } from "lucide-react";
 import { hashPasswordForAuth } from "../utils/crypto";
 
 export function AlbumKeyModal({
@@ -12,12 +12,21 @@ export function AlbumKeyModal({
 }) {
   if (!isOpen || !album) return null;
 
-  const [generatedKey, setGeneratedKey] = useState(null);
-  const [copied, setCopied] = useState(false);
+  const isDemo = album.id === "album-neon-noir";
+
   const [inputKey, setInputKey] = useState("");
+  const [generatedKey, setGeneratedKey] = useState("");
+  const [copied, setCopied] = useState(false);
   const [unlockError, setUnlockError] = useState("");
+  const [emergencySuccess, setEmergencySuccess] = useState("");
+  const [confirmStep, setConfirmStep] = useState(0); // 0: normal, 1: warning 1, 2: warning 2
 
   const handleGenerateKey = async () => {
+    if (isDemo) {
+      alert(t.demoCannotLock || "Демо-альбом не можна блокувати ключем!");
+      return;
+    }
+
     // Cryptographically derive a robust, uncrackable key from Title + User + Date/Hour entropy
     const albumName = (album.title || "album").trim();
     const username = (currentUser ? currentUser.username : "guest").trim();
@@ -43,42 +52,39 @@ export function AlbumKeyModal({
 
     const keyHash = await hashPasswordForAuth(rawKey, "album_verify_salt");
 
+    // Save key hash to album
     const updated = {
       ...album,
       masterKeyHash: keyHash,
       isLocked: false
     };
-
     onSaveAlbum(updated);
     setGeneratedKey(rawKey);
   };
 
+  const handleCopy = () => {
+    navigator.clipboard.writeText(generatedKey);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   const handleDeleteKey = () => {
-    if (window.confirm(t.deleteKeyConfirm || "Видалити захисний ключ цього альбому?")) {
+    if (window.confirm(t.deleteKeyConfirm || "Видалити ключ та зняти захист з цього альбому?")) {
       const updated = {
         ...album,
         masterKeyHash: null,
         isLocked: false
       };
       onSaveAlbum(updated);
-      setGeneratedKey(null);
-      setInputKey("");
-      setUnlockError("");
       onClose();
-    }
-  };
-
-  const handleCopy = () => {
-    if (generatedKey) {
-      navigator.clipboard.writeText(generatedKey);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
     }
   };
 
   const handleUnlock = async (e) => {
     e.preventDefault();
     setUnlockError("");
+
+    if (!inputKey.trim()) return;
 
     const computedHash = await hashPasswordForAuth(inputKey.trim(), "album_verify_salt");
     if (computedHash === album.masterKeyHash) {
@@ -91,15 +97,47 @@ export function AlbumKeyModal({
     }
   };
 
-  const handleLockAlbum = () => {
+  // Safe lock with warnings step 1 & 2
+  const handleStartLock = () => {
+    if (isDemo) {
+      alert(t.demoCannotLock || "Демо-альбом не можна блокувати ключем!");
+      return;
+    }
+    setConfirmStep(1);
+  };
+
+  const handleConfirmLock = () => {
     const updated = { ...album, isLocked: true };
     onSaveAlbum(updated);
+    setConfirmStep(0);
     onClose();
+  };
+
+  // 1 Forgiveness Recovery: User can recover once if key is lost
+  const handleOneForgivenessRestore = () => {
+    if (album.hasUsedForgiveness) {
+      setUnlockError(t.emergencyUsed || "Ви вже використали своє єдине вибачення для цього альбому!");
+      return;
+    }
+
+    if (window.confirm(t.useEmergencyRestore || "Використати 1 вибачення для аварійного розблокування? Більше цей шанс не буде доступний.")) {
+      const updated = {
+        ...album,
+        isLocked: false,
+        masterKeyHash: null, // Clear lost key
+        hasUsedForgiveness: true
+      };
+      onSaveAlbum(updated);
+      setEmergencySuccess(t.emergencySuccess || "Альбом успішно відновлено!");
+      setTimeout(() => {
+        onClose();
+      }, 1500);
+    }
   };
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-card" style={{ maxWidth: 500 }} onClick={(e) => e.stopPropagation()}>
+      <div className="modal-card" style={{ maxWidth: 520 }} onClick={(e) => e.stopPropagation()}>
         
         {/* Header */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18 }}>
@@ -114,8 +152,28 @@ export function AlbumKeyModal({
           </button>
         </div>
 
-        {/* Case 1: Freshly generated key shown 1 time */}
-        {generatedKey ? (
+        {/* DEMO ALBUM NOTICE */}
+        {isDemo ? (
+          <div style={{
+            background: "var(--bg-card-secondary)",
+            border: "1px solid var(--border-medium)",
+            borderRadius: "var(--radius-lg)",
+            padding: "20px",
+            textAlign: "center"
+          }}>
+            <ShieldAlert size={36} color="var(--accent)" style={{ margin: "0 auto 10px" }} />
+            <h3 style={{ fontSize: "1.05rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: 6 }}>
+              {t.demoCannotLock || "Демо-альбом відкритий для всіх"}
+            </h3>
+            <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)", lineHeight: 1.5, marginBottom: 16 }}>
+              {t.demoCannotLockDesc || "Демо-альбом «NEON HORIZON» призначений для тестування функцій студії. Щоб встановити секретний шифр, створіть власний альбом."}
+            </p>
+            <button onClick={onClose} className="btn btn-secondary">
+              {t.close || "Зрозуміло"}
+            </button>
+          </div>
+        ) : generatedKey ? (
+          /* Case 1: Freshly generated key shown 1 time */
           <div>
             <div style={{
               background: "var(--color-warning-bg)",
@@ -133,7 +191,7 @@ export function AlbumKeyModal({
                   {t.oneTimeWarning || "УВАГА: ЦЕЙ КЛЮЧ ПОКАЗУЄТЬСЯ ЛИШЕ 1 РАЗ!"}
                 </strong>
                 <p style={{ fontSize: "0.78rem", color: "var(--text-secondary)", lineHeight: 1.4 }}>
-                  {t.oneTimeDesc || "Він згенерований з назви альбому, вашого профілю та поточної години. Скопіюйте його зараз — він більше ніде не відображатиметься!"}
+                  {t.oneTimeDesc || "Він згенерований на основі назви альбому, вашого профілю та крипто-ентропії. Скопіюйте його зараз — він більше ніде не відображатиметься!"}
                 </p>
               </div>
             </div>
@@ -166,6 +224,71 @@ export function AlbumKeyModal({
               </button>
             </div>
           </div>
+        ) : confirmStep === 1 ? (
+          /* Warning step 1 */
+          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            <div style={{
+              background: "var(--color-warning-bg)",
+              border: "1px solid var(--color-warning)",
+              borderRadius: "var(--radius-md)",
+              padding: "16px",
+              display: "flex",
+              gap: 12,
+              alignItems: "flex-start"
+            }}>
+              <AlertTriangle size={24} color="var(--color-warning)" style={{ flexShrink: 0 }} />
+              <div>
+                <h4 style={{ margin: "0 0 6px", fontSize: "0.95rem", color: "var(--text-primary)" }}>
+                  {t.warning1Title || "Попередження №1: Захист контенту"}
+                </h4>
+                <p style={{ margin: 0, fontSize: "0.82rem", color: "var(--text-secondary)", lineHeight: 1.5 }}>
+                  {t.lockWarning1 || "Після блокування треки, демо-записи та конфіденційні матеріали будуть надійно приховані. Без введеного ключа переглянути або змінити альбом буде неможливо."}
+                </p>
+              </div>
+            </div>
+
+            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+              <button onClick={() => setConfirmStep(0)} className="btn btn-secondary">
+                {t.cancel || "Скасувати"}
+              </button>
+              <button onClick={() => setConfirmStep(2)} className="btn btn-primary">
+                <span>{t.iUnderstandContinue || "Я розумію, продовжити"} →</span>
+              </button>
+            </div>
+          </div>
+        ) : confirmStep === 2 ? (
+          /* Warning step 2 */
+          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            <div style={{
+              background: "var(--color-danger-bg)",
+              border: "1px solid var(--color-danger)",
+              borderRadius: "var(--radius-md)",
+              padding: "16px",
+              display: "flex",
+              gap: 12,
+              alignItems: "flex-start"
+            }}>
+              <ShieldAlert size={24} color="var(--color-danger)" style={{ flexShrink: 0 }} />
+              <div>
+                <h4 style={{ margin: "0 0 6px", fontSize: "0.95rem", color: "var(--color-danger)" }}>
+                  {t.warning2Title || "Попередження №2: Збереження ключа"}
+                </h4>
+                <p style={{ margin: 0, fontSize: "0.82rem", color: "var(--text-secondary)", lineHeight: 1.5 }}>
+                  {t.lockWarning2 || "Переконайтеся, що ви надійно записали або зберегли ключ у менеджері паролів чи нотатках! Ви дійсно бажаєте заблокувати альбом прямо зараз?"}
+                </p>
+              </div>
+            </div>
+
+            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+              <button onClick={() => setConfirmStep(0)} className="btn btn-secondary">
+                {t.back || "Назад"}
+              </button>
+              <button onClick={handleConfirmLock} className="btn btn-primary" style={{ background: "var(--color-danger)" }}>
+                <Lock size={14} />
+                <span>{t.confirmLockAlbum || "Заблокувати альбом"}</span>
+              </button>
+            </div>
+          </div>
         ) : album.isLocked ? (
           /* Case 2: Album is currently locked */
           <form onSubmit={handleUnlock}>
@@ -175,7 +298,7 @@ export function AlbumKeyModal({
                 {t.albumLocked || "Альбом заблоковано"}
               </h3>
               <p style={{ fontSize: "0.8rem", color: "var(--text-secondary)" }}>
-                {t.enterPasswordToUnlock || "Введіть ваш одноразовий пароль для розшифрування"}
+                {t.enterPasswordToUnlock || "Введіть ваш ключ розшифрування для доступу"}
               </p>
             </div>
 
@@ -185,7 +308,7 @@ export function AlbumKeyModal({
                 required
                 value={inputKey}
                 onChange={(e) => setInputKey(e.target.value)}
-                placeholder="TRK-XXXX-XX-XXXX"
+                placeholder="TRK-XXXX-XXXX-XXXX-XXXX"
                 className="input font-mono"
                 style={{ textAlign: "center", fontSize: "1rem", letterSpacing: "0.05em" }}
               />
@@ -204,21 +327,74 @@ export function AlbumKeyModal({
               </div>
             )}
 
+            {emergencySuccess && (
+              <div style={{
+                background: "var(--color-success-bg)",
+                color: "var(--color-success)",
+                borderRadius: "var(--radius-sm)",
+                padding: "8px 12px",
+                fontSize: "0.8rem",
+                marginBottom: 14
+              }}>
+                {emergencySuccess}
+              </div>
+            )}
+
             <div style={{ display: "flex", gap: 10 }}>
               <button type="submit" className="btn btn-primary" style={{ flex: 1 }}>
                 <Unlock size={14} />
                 <span>{t.unlock || "Розблокувати"}</span>
               </button>
-              <button type="button" onClick={handleDeleteKey} className="btn btn-danger-ghost">
+              <button type="button" onClick={handleDeleteKey} className="btn btn-danger-ghost" title={t.deleteKey || "Видалити ключ"}>
                 <Trash2 size={14} />
               </button>
+            </div>
+
+            {/* 1 FORGIVENESS EMERGENCY RECOVERY SECTION */}
+            <div style={{
+              marginTop: 20,
+              paddingTop: 16,
+              borderTop: "1px dashed var(--border-medium)",
+              display: "flex",
+              flexDirection: "column",
+              gap: 8
+            }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <HeartHandshake size={15} color="var(--accent)" />
+                <span style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--text-primary)" }}>
+                  {t.emergencyRestoreTitle || "Загубили ключ? (1 Вибачення)"}
+                </span>
+              </div>
+              <p style={{ margin: 0, fontSize: "0.75rem", color: "var(--text-muted)", lineHeight: 1.4 }}>
+                {album.hasUsedForgiveness 
+                  ? (t.emergencyUsed || "Ви вже скористалися своїм єдиним вибаченням для цього альбому.")
+                  : (t.emergencyRestoreDesc || "Система надає 1 вибачення: ви можете один раз скинути замок та повернути доступ до матеріалів без ключа.")}
+              </p>
+
+              {!album.hasUsedForgiveness && (
+                <button
+                  type="button"
+                  onClick={handleOneForgivenessRestore}
+                  className="btn btn-ghost btn-sm"
+                  style={{
+                    alignSelf: "flex-start",
+                    fontSize: "0.76rem",
+                    color: "var(--accent)",
+                    padding: "4px 8px",
+                    marginTop: 4
+                  }}
+                >
+                  <HeartHandshake size={13} />
+                  <span>{t.useEmergencyRestore || "Використати 1 вибачення (Відновити альбом)"}</span>
+                </button>
+              )}
             </div>
           </form>
         ) : (
           /* Case 3: Album is unlocked, can generate key or lock */
           <div>
             <p style={{ fontSize: "0.84rem", color: "var(--text-secondary)", marginBottom: 18, lineHeight: 1.5 }}>
-              {t.keyIntro || "Ви можете згенерувати унікальний пароль для альбому. Він формується на основі назви, акаунта та поточної години."}
+              {t.keyIntro || "Ви можете згенерувати унікальний криптографічний пароль для захисту альбому. Він робить реліз конфіденційним до моменту розшифрування."}
             </p>
 
             {album.masterKeyHash ? (
@@ -234,12 +410,12 @@ export function AlbumKeyModal({
                   alignItems: "center",
                   gap: 8
                 }}>
-                  <Check size={15} />
+                  <ShieldCheck size={16} />
                   <span>{t.keyCreatedActive || "Ключ створено та активовано."}</span>
                 </div>
 
                 <div style={{ display: "flex", gap: 10, marginTop: 6 }}>
-                  <button onClick={handleLockAlbum} className="btn btn-primary" style={{ flex: 1 }}>
+                  <button onClick={handleStartLock} className="btn btn-primary" style={{ flex: 1 }}>
                     <Lock size={14} />
                     <span>{t.lockAlbum || "Заблокувати альбом"}</span>
                   </button>
