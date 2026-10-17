@@ -506,15 +506,7 @@ export function Header({
             </button>
           </div>
 
-          {/* Studio Sheet Modal */}
-          <button
-            onClick={onOpenStudioSheet}
-            className="btn btn-secondary btn-sm"
-            title={t.studioSheet}
-          >
-            <FileText size={13} color="var(--accent)" />
-            <span>{t.studioSheet}</span>
-          </button>
+
 
           {/* Backup & Restore (Offline) */}
           <button

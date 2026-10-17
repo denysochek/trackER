@@ -84,16 +84,23 @@ export function AlbumKeyModal({
     e.preventDefault();
     setUnlockError("");
 
-    if (!inputKey.trim()) return;
+    const cleanedKey = inputKey.trim().toUpperCase();
+    if (!cleanedKey) return;
 
-    const computedHash = await hashPasswordForAuth(inputKey.trim(), "album_verify_salt");
-    if (computedHash === album.masterKeyHash) {
+    // Check with direct cleaned key
+    const computedHash = await hashPasswordForAuth(cleanedKey, "album_verify_salt");
+    
+    // Also support if user typed without TRK- prefix
+    const prefixedKey = cleanedKey.startsWith("TRK-") ? cleanedKey : `TRK-${cleanedKey}`;
+    const computedPrefixedHash = await hashPasswordForAuth(prefixedKey, "album_verify_salt");
+
+    if (computedHash === album.masterKeyHash || computedPrefixedHash === album.masterKeyHash) {
       const updated = { ...album, isLocked: false };
       onSaveAlbum(updated);
       setInputKey("");
       onClose();
     } else {
-      setUnlockError(t.invalidKey || "Невірний ключ розшифрування альбому!");
+      setUnlockError(t.invalidKey || "Невірний ключ розшифрування альбому! Перевірте правильність введеного ключа.");
     }
   };
 
@@ -214,13 +221,24 @@ export function AlbumKeyModal({
               </span>
             </div>
 
-            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
-              <button onClick={handleCopy} className="btn btn-primary" style={{ flex: 1 }}>
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap", justifyContent: "flex-end" }}>
+              <button onClick={handleCopy} className="btn btn-secondary" style={{ flex: 1 }}>
                 {copied ? <Check size={14} /> : <Copy size={14} />}
                 <span>{copied ? (t.keyCopied || "Скопійовано!") : (t.copyKey || "Скопіювати ключ")}</span>
               </button>
-              <button onClick={onClose} className="btn btn-secondary">
-                {t.done || "Готово"}
+              <button
+                onClick={() => {
+                  setGeneratedKey("");
+                  handleStartLock();
+                }}
+                className="btn btn-primary"
+                style={{ flex: 1.2 }}
+              >
+                <Lock size={14} />
+                <span>{t.lockAlbum || "Заблокувати альбом зараз"}</span>
+              </button>
+              <button onClick={onClose} className="btn btn-ghost">
+                {t.done || "Закрити"}
               </button>
             </div>
           </div>
