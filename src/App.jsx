@@ -10,7 +10,8 @@ import {
   Video,
   Lock,
   ShieldCheck,
-  Unlock
+  Unlock,
+  FileEdit
 } from 'lucide-react';
 
 import { translations } from './translations';
@@ -718,6 +719,7 @@ export default function App() {
 
         
         {/* Always-Available Bottom Album Notes & Concept Field */}
+        {currentAlbum && !currentAlbum.isLocked && (
         <div style={{
           marginTop: 28,
           marginBottom: 16,
@@ -759,6 +761,7 @@ export default function App() {
             }}
           />
         </div>
+        )}
 
         {/* Footer with credit, compact restored disc button, and hidden big board button */}
         <footer className="page-bottom-bar">

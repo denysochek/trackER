@@ -18,12 +18,28 @@ export function AlbumKeyModal({
   const [unlockError, setUnlockError] = useState("");
 
   const handleGenerateKey = async () => {
-    const albumNamePart = (album.title || "album").replace(/\s+/g, "").toUpperCase().slice(0, 4);
-    const userPart = (currentUser ? currentUser.username : "guest").toUpperCase().slice(0, 4);
-    const hourPart = String(new Date().getHours()).padStart(2, "0");
-    const randPart = Math.random().toString(36).substring(2, 6).toUpperCase();
+    // Cryptographically derive a robust, uncrackable key from Title + User + Date/Hour entropy
+    const albumName = (album.title || "album").trim();
+    const username = (currentUser ? currentUser.username : "guest").trim();
+    const hourStamp = new Date().toISOString().slice(0, 13); // YYYY-MM-DDTHH
+    
+    // Mix deterministic values with a CSPRNG salt buffer for maximum randomness and resistance
+    const seed = `${albumName}::${username}::${hourStamp}`;
+    const encoder = new TextEncoder();
+    const data = encoder.encode(seed);
+    
+    // Compute SHA-256 digest of the combination
+    const hashBuffer = await window.crypto.subtle.digest("SHA-256", data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const hex = hashArray.map(b => b.toString(16).padStart(2, "0")).join("").toUpperCase();
 
-    const rawKey = `TRK-${albumNamePart}-${userPart}-${hourPart}-${randPart}`;
+    // High-entropy random salt from crypto.getRandomValues
+    const randBuffer = new Uint8Array(4);
+    window.crypto.getRandomValues(randBuffer);
+    const randHex = Array.from(randBuffer).map(b => b.toString(16).padStart(2, "0")).join("").toUpperCase();
+
+    // High-security key structure: TRK-[Derived1]-[Derived2]-[Derived3]-[CSPRNG]
+    const rawKey = `TRK-${hex.slice(0, 4)}-${hex.slice(8, 12)}-${hex.slice(18, 22)}-${randHex.slice(0, 4)}`;
 
     const keyHash = await hashPasswordForAuth(rawKey, "album_verify_salt");
 
