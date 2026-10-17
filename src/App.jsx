@@ -157,6 +157,59 @@ export default function App() {
   };
 
 
+
+  // Automatically check recipient inbox for shared albums sent to this user
+  useEffect(() => {
+    if (!currentUser || !currentUser.username) return;
+
+    const checkInbox = () => {
+      try {
+        const inboxKey = "tracker_shared_inbox_" + currentUser.username.toLowerCase();
+        const raw = localStorage.getItem(inboxKey);
+        if (!raw) return;
+
+        const inbox = JSON.parse(raw);
+        if (Array.isArray(inbox) && inbox.length > 0) {
+          // Process all incoming shared albums into current user albums
+          setAlbums(prevAlbums => {
+            let updated = [...prevAlbums];
+            let addedCount = 0;
+
+            inbox.forEach(sharedItem => {
+              const alreadyExists = updated.some(a => a.id === sharedItem.id);
+              if (!alreadyExists) {
+                updated.unshift({
+                  ...sharedItem,
+                  concept: sharedItem.concept || "",
+                  tracks: sharedItem.tracks || []
+                });
+                addedCount++;
+              }
+            });
+
+            if (addedCount > 0) {
+              persistAlbums(updated);
+              setCurrentAlbumId(inbox[0].id);
+              setCurrentView("studio");
+              triggerConfetti();
+            }
+
+            return updated;
+          });
+
+          // Clear inbox after incorporating
+          localStorage.removeItem(inboxKey);
+        }
+      } catch (err) {
+        console.error("Error processing shared inbox:", err);
+      }
+    };
+
+    checkInbox();
+    window.addEventListener("storage", checkInbox);
+    return () => window.removeEventListener("storage", checkInbox);
+  }, [currentUser]);
+
   // Handle Shared Album from URL hash (#share=...)
   useEffect(() => {
     const handleHash = () => {
@@ -780,6 +833,7 @@ export default function App() {
         isOpen={isShareModalOpen}
         onClose={() => setIsShareModalOpen(false)}
         album={currentAlbum}
+        currentUser={currentUser}
         t={t}
       />
 

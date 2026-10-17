@@ -1,14 +1,20 @@
 import React, { useState } from "react";
-import { X, Share2, Copy, Check, MessageSquare, Link, Sparkles, Send, Download } from "lucide-react";
+import { X, Share2, Copy, Check, MessageSquare, Link, Sparkles, Send, UserCheck, AlertCircle, CheckCircle2 } from "lucide-react";
 import { calculateAlbumProgress, calculateTrackScore, getTrackMaxScore, isTrackFinished } from "../constants";
 
 export function ShareAlbumModal({
   isOpen,
   onClose,
   album,
+  currentUser,
   t
 }) {
   if (!isOpen || !album) return null;
+
+  const [activeTab, setActiveTab] = useState("directUser"); // "directUser" | "link" | "summary"
+  const [targetUsername, setTargetUsername] = useState("");
+  const [shareStatus, setShareStatus] = useState(null); // { type: "success" | "error", message: string }
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [copiedLink, setCopiedLink] = useState(false);
   const [copiedSummary, setCopiedSummary] = useState(false);
@@ -16,6 +22,91 @@ export function ShareAlbumModal({
   const tracks = album.tracks || [];
   const progressPercent = calculateAlbumProgress(tracks);
   const finishedCount = tracks.filter(tr => isTrackFinished(tr)).length;
+
+  // Direct User-to-User Sharing (Instant inbox delivery to recipient account)
+  const handleShareToUser = (e) => {
+    e.preventDefault();
+    setShareStatus(null);
+    const trimmedTarget = targetUsername.trim().toLowerCase();
+
+    if (!trimmedTarget) {
+      setShareStatus({ type: "error", message: t.fillAllFields || "Введіть нікнейм користувача." });
+      return;
+    }
+
+    if (currentUser && currentUser.username && currentUser.username.toLowerCase() === trimmedTarget) {
+      setShareStatus({ type: "error", message: t.cannotShareToSelf || "Ви не можете поділитися альбомом із самим собою." });
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      // 1. Verify that recipient exists in user registry
+      const usersRegistry = JSON.parse(localStorage.getItem("tracker_users_registry") || "{}");
+      const targetUserRecord = usersRegistry[trimmedTarget];
+
+      if (!targetUserRecord) {
+        setShareStatus({
+          type: "error",
+          message: `${t.userNotFound || "Користувача не знайдено:"} "@${targetUsername.trim()}"`
+        });
+        setIsSubmitting(false);
+        return;
+      }
+
+      // 2. Prepare shared album payload
+      const sharedItem = {
+        id: `shared-${album.id}-${Date.now()}`,
+        originalAlbumId: album.id,
+        title: album.title,
+        artist: album.artist,
+        genre: album.genre,
+        targetDate: album.targetDate,
+        concept: album.concept,
+        coverUrl: album.coverUrl,
+        tracks: album.tracks,
+        sharedBy: currentUser ? (currentUser.artistName || currentUser.username) : "Anonymous Producer",
+        sharedByUsername: currentUser ? currentUser.username : "guest",
+        sharedAt: new Date().toISOString()
+      };
+
+      // 3. Put into recipient inbox
+      const inboxKey = `tracker_shared_inbox_${trimmedTarget}`;
+      const currentInbox = JSON.parse(localStorage.getItem(inboxKey) || "[]");
+
+      // Check if already shared
+      const alreadyExists = currentInbox.some(
+        item => item.originalAlbumId === album.id && item.sharedByUsername === sharedItem.sharedByUsername
+      );
+
+      if (alreadyExists) {
+        setShareStatus({
+          type: "error",
+          message: t.alreadySharedToUser || "Цей альбом уже надіслано цьому користувачу."
+        });
+        setIsSubmitting(false);
+        return;
+      }
+
+      currentInbox.unshift(sharedItem);
+      localStorage.setItem(inboxKey, JSON.stringify(currentInbox));
+
+      // Trigger custom storage event for live inter-tab synchronization
+      window.dispatchEvent(new Event("storage"));
+
+      setShareStatus({
+        type: "success",
+        message: `${t.shareSuccessMsg || "Альбом успішно надіслано!"} @${targetUserRecord.username} (${targetUserRecord.artistName || targetUserRecord.username})`
+      });
+      setTargetUsername("");
+    } catch (err) {
+      console.error(err);
+      setShareStatus({ type: "error", message: "Помилка передачі альбому." });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   // Generate self-contained URL share link using base64 encoded album payload
   const generateShareUrl = () => {
@@ -86,32 +177,16 @@ export function ShareAlbumModal({
     setTimeout(() => setCopiedSummary(false), 2200);
   };
 
-  const handleNativeShare = async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: `${album.title} — trackER Album`,
-          text: (t.language === 'Language' ? `Album progress ${album.title}: ${progressPercent}%` : `Прогрес альбому ${album.title}: ${progressPercent}%`),
-          url: shareUrl
-        });
-      } catch (err) {
-        if (err.name !== "AbortError") console.error(err);
-      }
-    } else {
-      handleCopyLink();
-    }
-  };
-
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-card" style={{ maxWidth: 520 }} onClick={(e) => e.stopPropagation()}>
+      <div className="modal-card" style={{ maxWidth: 540 }} onClick={(e) => e.stopPropagation()}>
         
         {/* Header */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <div style={{
-              width: 36,
-              height: 36,
+              width: 38,
+              height: 38,
               borderRadius: 10,
               background: "var(--accent-subtle)",
               border: "1px solid rgba(var(--accent-rgb), 0.25)",
@@ -119,14 +194,14 @@ export function ShareAlbumModal({
               alignItems: "center",
               justifyContent: "center"
             }}>
-              <Share2 size={18} color="var(--accent)" />
+              <Share2 size={20} color="var(--accent)" />
             </div>
             <div>
-              <h2 style={{ fontSize: "1.15rem", fontWeight: 700, color: "var(--text-primary)" }}>
+              <h2 style={{ fontSize: "1.18rem", fontWeight: 700, color: "var(--text-primary)", margin: 0 }}>
                 {t.shareAlbumTitle || "Поділитися альбомом"}
               </h2>
-              <p style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
-                {album.title} • {progressPercent}%
+              <p style={{ fontSize: "0.75rem", color: "var(--text-muted)", margin: "2px 0 0" }}>
+                {album.title} • {progressPercent}% {t.completedTracks || "Готово"}
               </p>
             </div>
           </div>
@@ -136,95 +211,189 @@ export function ShareAlbumModal({
           </button>
         </div>
 
-        {/* Option 1: Direct Link */}
-        <div style={{
-          background: "var(--bg-pill)",
-          border: "1px solid var(--border-subtle)",
-          borderRadius: "var(--radius-md)",
-          padding: "14px",
-          marginBottom: 16
-        }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8, fontSize: "0.82rem", fontWeight: 600, color: "var(--text-primary)" }}>
-            <Link size={14} color="var(--accent)" />
-            <span>{t.shareLink || "Пряме посилання для відкриття"}</span>
-          </div>
-
-          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-            <input
-              type="text"
-              readOnly
-              value={shareUrl}
-              className="input"
-              style={{ fontSize: "0.75rem", fontFamily: "monospace", overflow: "hidden", textOverflow: "ellipsis" }}
-            />
-            <button
-              onClick={handleCopyLink}
-              className="btn btn-primary"
-              style={{ flexShrink: 0, padding: "8px 14px", fontSize: "0.78rem" }}
-            >
-              {copiedLink ? <Check size={13} /> : <Copy size={13} />}
-              <span>{copiedLink ? (t.linkCopied || "Скопійовано!") : (t.copyShareLink || "Копіювати")}</span>
-            </button>
-          </div>
-
-          <div style={{ fontSize: "0.72rem", color: "var(--text-muted)", marginTop: 8 }}>
-            {t.shareLinkDesc || "Посилання містить увесь альбом і треки. Отримувач зможе відкрити та імпортувати його без реєстрації."}
-          </div>
+        {/* Tab Controls: Direct User Send vs Link vs Summary */}
+        <div className="segmented-control" style={{ width: "100%", marginBottom: 18 }}>
+          <button
+            type="button"
+            onClick={() => { setActiveTab("directUser"); setShareStatus(null); }}
+            className={`segmented-control-btn ${activeTab === "directUser" ? "active" : ""}`}
+            style={{ flex: 1, justifyContent: "center", padding: "7px 10px", fontSize: "0.82rem", fontWeight: 600 }}
+          >
+            <UserCheck size={14} />
+            <span>{t.shareWithUser || "В акаунт за ніком"}</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => { setActiveTab("link"); setShareStatus(null); }}
+            className={`segmented-control-btn ${activeTab === "link" ? "active" : ""}`}
+            style={{ flex: 1, justifyContent: "center", padding: "7px 10px", fontSize: "0.82rem", fontWeight: 600 }}
+          >
+            <Link size={14} />
+            <span>{t.shareLink || "Посилання"}</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => { setActiveTab("summary"); setShareStatus(null); }}
+            className={`segmented-control-btn ${activeTab === "summary" ? "active" : ""}`}
+            style={{ flex: 1, justifyContent: "center", padding: "7px 10px", fontSize: "0.82rem", fontWeight: 600 }}
+          >
+            <MessageSquare size={14} />
+            <span>{t.shareMessenger || "Звіт"}</span>
+          </button>
         </div>
 
-        {/* Option 2: Messenger Progress Report */}
-        <div style={{
-          background: "var(--bg-card-secondary)",
-          border: "1px solid var(--border-subtle)",
-          borderRadius: "var(--radius-md)",
-          padding: "14px",
-          marginBottom: 16
-        }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: "0.82rem", fontWeight: 600, color: "var(--text-primary)" }}>
-              <MessageSquare size={14} color="#38bdf8" />
-              <span>{t.shareMessenger || "Текстовий звіт для Telegram / Discord"}</span>
+        {/* TAB 1: USER-TO-USER SHARING (THE EXACT REQUESTED FEATURE) */}
+        {activeTab === "directUser" && (
+          <div>
+            <div style={{
+              background: "var(--bg-card-secondary)",
+              border: "1px solid var(--border-medium)",
+              borderRadius: "var(--radius-lg)",
+              padding: "16px",
+              marginBottom: 16
+            }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                <Send size={15} color="var(--accent)" />
+                <strong style={{ fontSize: "0.88rem", color: "var(--text-primary)" }}>
+                  {t.shareWithUser || "Надіслати прямо в акаунт"}
+                </strong>
+              </div>
+              <p style={{ fontSize: "0.78rem", color: "var(--text-secondary)", lineHeight: 1.45, margin: "0 0 14px" }}>
+                {t.shareWithUserDesc || "Введіть нікнейм користувача (наприклад dionisii), і цей альбом автоматично з’явиться у його особистій студії."}
+              </p>
+
+              <form onSubmit={handleShareToUser} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                <div>
+                  <label style={{ fontSize: "0.75rem", fontWeight: 600, color: "var(--text-secondary)", display: "block", marginBottom: 6 }}>
+                    {t.targetUsername || "Нікнейм отримувача"} *
+                  </label>
+                  <div style={{ position: "relative" }}>
+                    <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)", fontWeight: 700, fontSize: "0.9rem" }}>
+                      @
+                    </span>
+                    <input
+                      type="text"
+                      required
+                      value={targetUsername}
+                      onChange={(e) => setTargetUsername(e.target.value)}
+                      placeholder={t.targetUsernamePlaceholder || "напр. dionisii"}
+                      className="input"
+                      style={{ paddingLeft: 28, fontSize: "0.88rem", fontWeight: 600 }}
+                    />
+                  </div>
+                </div>
+
+                {shareStatus && (
+                  <div style={{
+                    background: shareStatus.type === "success" ? "rgba(34, 197, 94, 0.12)" : "var(--color-danger-bg)",
+                    color: shareStatus.type === "success" ? "var(--color-success)" : "var(--color-danger)",
+                    border: `1px solid ${shareStatus.type === "success" ? "rgba(34, 197, 94, 0.3)" : "rgba(255, 59, 48, 0.25)"}`,
+                    borderRadius: "var(--radius-sm)",
+                    padding: "10px 12px",
+                    fontSize: "0.8rem",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8
+                  }}>
+                    {shareStatus.type === "success" ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
+                    <span>{shareStatus.message}</span>
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="btn btn-primary"
+                  style={{ width: "100%", justifyContent: "center", padding: "10px", marginTop: 4, fontWeight: 700 }}
+                >
+                  <Send size={15} />
+                  <span>{isSubmitting ? (t.sendingAlbum || "Відправка...") : (t.sendToUserBtn || "Надіслати в акаунт")}</span>
+                </button>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 2: LINK SHARING */}
+        {activeTab === "link" && (
+          <div style={{
+            background: "var(--bg-pill)",
+            border: "1px solid var(--border-subtle)",
+            borderRadius: "var(--radius-md)",
+            padding: "14px",
+            marginBottom: 16
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8, fontSize: "0.82rem", fontWeight: 600, color: "var(--text-primary)" }}>
+              <Link size={14} color="var(--accent)" />
+              <span>{t.shareLink || "Пряме посилання для відкриття"}</span>
             </div>
 
-            <button
-              onClick={handleCopySummary}
-              className="btn btn-secondary btn-sm"
-              style={{ padding: "4px 10px", fontSize: "0.74rem" }}
-            >
-              {copiedSummary ? <Check size={12} color="var(--color-success)" /> : <Copy size={12} />}
-              <span>{copiedSummary ? (t.summaryCopied || "Скопійовано!") : (t.copyMessengerSummary || "Скопіювати текст")}</span>
-            </button>
+            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+              <input
+                type="text"
+                readOnly
+                value={shareUrl}
+                className="input"
+                style={{ fontSize: "0.75rem", fontFamily: "monospace", overflow: "hidden", textOverflow: "ellipsis" }}
+              />
+              <button
+                onClick={handleCopyLink}
+                className="btn btn-primary"
+                style={{ flexShrink: 0, padding: "8px 14px", fontSize: "0.78rem" }}
+              >
+                {copiedLink ? <Check size={13} /> : <Copy size={13} />}
+                <span>{copiedLink ? (t.linkCopied || "Скопійовано!") : (t.copyShareLink || "Копіювати")}</span>
+              </button>
+            </div>
+
+            <div style={{ fontSize: "0.72rem", color: "var(--text-muted)", marginTop: 8 }}>
+              {t.shareLinkDesc || "Посилання містить увесь альбом і треки. Отримувач зможе відкрити та імпортувати його без реєстрації."}
+            </div>
           </div>
+        )}
 
-          {/* Preview box */}
-          <pre style={{
-            margin: 0,
-            padding: "10px",
-            background: "var(--bg-main)",
+        {/* TAB 3: MESSENGER REPORT */}
+        {activeTab === "summary" && (
+          <div style={{
+            background: "var(--bg-card-secondary)",
             border: "1px solid var(--border-subtle)",
-            borderRadius: "var(--radius-sm)",
-            fontSize: "0.72rem",
-            color: "var(--text-secondary)",
-            maxHeight: 120,
-            overflowY: "auto",
-            whiteSpace: "pre-wrap",
-            fontFamily: "monospace",
-            lineHeight: 1.45
+            borderRadius: "var(--radius-md)",
+            padding: "14px",
+            marginBottom: 16
           }}>
-            {generateTextSummary()}
-          </pre>
-        </div>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: "0.82rem", fontWeight: 600, color: "var(--text-primary)" }}>
+                <MessageSquare size={14} color="#38bdf8" />
+                <span>{t.shareMessenger || "Текстовий звіт для Telegram / Discord"}</span>
+              </div>
 
-        {/* Option 3: System Share Dialog if available */}
-        {typeof navigator !== "undefined" && navigator.share && (
-          <button
-            onClick={handleNativeShare}
-            className="btn btn-secondary"
-            style={{ width: "100%", justifyContent: "center", padding: "9px" }}
-          >
-            <Send size={14} />
-            <span>{t.nativeShare || "Надіслати через систему (AirDrop, Telegram...)"}</span>
-          </button>
+              <button
+                onClick={handleCopySummary}
+                className="btn btn-secondary btn-sm"
+                style={{ padding: "4px 10px", fontSize: "0.74rem" }}
+              >
+                {copiedSummary ? <Check size={12} color="var(--color-success)" /> : <Copy size={12} />}
+                <span>{copiedSummary ? (t.summaryCopied || "Скопійовано!") : (t.copyMessengerSummary || "Скопіювати текст")}</span>
+              </button>
+            </div>
+
+            <pre style={{
+              margin: 0,
+              padding: "10px",
+              background: "var(--bg-main)",
+              border: "1px solid var(--border-subtle)",
+              borderRadius: "var(--radius-sm)",
+              fontSize: "0.72rem",
+              color: "var(--text-secondary)",
+              maxHeight: 140,
+              overflowY: "auto",
+              whiteSpace: "pre-wrap",
+              fontFamily: "monospace",
+              lineHeight: 1.45
+            }}>
+              {generateTextSummary()}
+            </pre>
+          </div>
         )}
 
       </div>

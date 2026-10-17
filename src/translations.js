@@ -141,6 +141,21 @@ export const TRANSLATIONS = {
     creditsTitle: "Титри львівського репу (032)",
     closeCredits: "Закрити титри",
 
+    // User-to-User Album Sharing
+    shareWithUser: "Поділитися з користувачем",
+    shareWithUserDesc: "Введіть нікнейм зареєстрованого користувача, і цей альбом автоматично з’явиться в його акаунті.",
+    targetUsername: "Нікнейм отримувача",
+    targetUsernamePlaceholder: "напр. dionisii або producer_032",
+    sendToUserBtn: "Надіслати в акаунт",
+    sendingAlbum: "Відправка...",
+    shareSuccessMsg: "Альбом успішно надіслано в акаунт!",
+    cannotShareToSelf: "Ви не можете поділитися альбомом із самим собою.",
+    userNotFound: "Користувача з таким нікнеймом не знайдено в системі.",
+    alreadySharedToUser: "Цей альбом уже надіслано цьому користувачу.",
+    receivedAlbumAlert: "Вам надіслали новий альбом!",
+    receivedAlbumFrom: "від",
+    acceptSharedAlbum: "Прийняти альбом",
+    sharedBadge: "СПІЛЬНИЙ АЛЬБОМ",
     // Share Album
     shareAlbum: "Поділитися",
     shareAlbumTitle: "Поділитися альбомом",
@@ -453,6 +468,21 @@ export const TRANSLATIONS = {
     creditsTitle: "032 Lviv Hip-Hop End Credits",
     closeCredits: "Close Credits",
 
+    // User-to-User Album Sharing
+    shareWithUser: "Share with User",
+    shareWithUserDesc: "Enter the username of a registered user, and this album will automatically appear in their account.",
+    targetUsername: "Recipient Username",
+    targetUsernamePlaceholder: "e.g. dionisii or producer_032",
+    sendToUserBtn: "Send to Account",
+    sendingAlbum: "Sending...",
+    shareSuccessMsg: "Album successfully sent to account!",
+    cannotShareToSelf: "You cannot share an album with yourself.",
+    userNotFound: "No user found with this username.",
+    alreadySharedToUser: "This album has already been shared with this user.",
+    receivedAlbumAlert: "You received a new album!",
+    receivedAlbumFrom: "from",
+    acceptSharedAlbum: "Accept Album",
+    sharedBadge: "SHARED ALBUM",
     // Share Album
     shareAlbum: "Share",
     shareAlbumTitle: "Share Album Project",
