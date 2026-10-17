@@ -61,10 +61,23 @@ export function isTrackFinished(track) {
 export function calculateTrackScore(track) {
   if (!track || !track.steps) return 0;
   const s = track.steps;
-  const isInstrumentalOrSkit = track.type === 'instrumental' || track.type === 'skit';
 
-  if (isInstrumentalOrSkit) {
-    // 5 points total: 3 for Beat + 2 for Visual
+  // Skit: 5 points total (2 beat checkboxes + 3 vocal checkboxes)
+  if (track.type === 'skit') {
+    let beatScore = 0;
+    if (s.step_beat_demo) beatScore += 1;
+    if (s.step_beat_arr) beatScore += 1;
+
+    let vocScore = 0;
+    if (s.step_voc_lyrics) vocScore += 1;
+    if (s.step_voc_rec) vocScore += 1;
+    if (s.step_voc_mix) vocScore += 1;
+
+    return Math.min(5, Math.max(0, beatScore + vocScore));
+  }
+
+  // Instrumental: 5 points total (3 beat checkboxes + 2 visual checkboxes)
+  if (track.type === 'instrumental') {
     let beatScore = 0;
     if (s.step_beat_demo) beatScore += 1;
     if (s.step_beat_arr) beatScore += 1;

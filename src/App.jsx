@@ -71,6 +71,20 @@ export default function App() {
   const [isExportImportModalOpen, setIsExportImportModalOpen] = useState(false);
   const [isAlbumKeyModalOpen, setIsAlbumKeyModalOpen] = useState(false);
 
+  // One-time account wipe requested by user
+  useEffect(() => {
+    if (!localStorage.getItem("tracker_wipe_accounts_v5")) {
+      localStorage.removeItem("tracker_users_registry");
+      Object.keys(localStorage).forEach(key => {
+        if (key.startsWith("tracker_vault_")) {
+          localStorage.removeItem(key);
+        }
+      });
+      localStorage.removeItem("tracker_user_session");
+      localStorage.setItem("tracker_wipe_accounts_v5", "true");
+    }
+  }, []);
+
   const t = translations[lang] || translations.uk;
 
   // Apply theme and accent to HTML root

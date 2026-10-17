@@ -895,42 +895,179 @@ h1, h2, h3, h4, .font-display {
   font-family: var(--font-sans);
 }
 
-/* 3. LVIV RAPPERS STORM (032): Centered, Slower, High-Legibility Stream */
-@keyframes rapperCenterStreamUp {
+/* 3. LVIV RAPPERS CINEMATIC CREDITS ROLL (032) */
+.credits-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  background: rgba(6, 6, 8, 0.96);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.credits-close-btn {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  z-index: 350;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(30, 30, 36, 0.9);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: var(--radius-full);
+  padding: 8px 16px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.6);
+}
+.credits-close-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.04);
+}
+
+.credits-vignette-top {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 20vh;
+  background: linear-gradient(to bottom, #060608 20%, rgba(6, 6, 8, 0.85) 60%, transparent 100%);
+  pointer-events: none;
+  z-index: 320;
+}
+
+.credits-vignette-bottom {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 22vh;
+  background: linear-gradient(to top, #060608 20%, rgba(6, 6, 8, 0.85) 60%, transparent 100%);
+  pointer-events: none;
+  z-index: 320;
+}
+
+.credits-roll-wrapper {
+  width: 100%;
+  max-width: 680px;
+  height: 100%;
+  position: relative;
+  pointer-events: none;
+}
+
+@keyframes cinematicCreditsScroll {
   0% {
-    transform: translateX(-50%) translateY(105vh) rotate(var(--rot-start, -6deg)) scale(0.85);
-    opacity: 0;
-  }
-  10% {
-    opacity: 1;
-    transform: translateX(-50%) translateY(70vh) rotate(var(--rot-start, -6deg)) scale(1.0);
-  }
-  88% {
-    opacity: 1;
-    transform: translateX(-50%) translateY(-75vh) rotate(var(--rot-end, 6deg)) scale(1.02);
+    transform: translateY(105vh);
   }
   100% {
-    transform: translateX(-50%) translateY(-135vh) rotate(var(--rot-end, 6deg)) scale(1.08);
-    opacity: 0;
+    transform: translateY(-105%);
   }
 }
 
-.lviv-rapper-card {
-  position: fixed;
-  pointer-events: none;
-  z-index: 250;
+.credits-roll-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 28px;
+  padding: 40px 20px 140px;
+  animation: cinematicCreditsScroll 22s linear forwards;
+}
+
+.credits-header-block {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.credits-main-title {
+  font-size: 2.2rem;
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  color: #fff;
+  text-shadow: 0 0 35px rgba(255, 255, 255, 0.4);
+  margin: 8px 0 6px;
+  font-family: var(--font-sans);
+}
+
+.credits-subtitle {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #999;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  margin: 0;
+}
+
+.credits-divider {
+  font-size: 1.1rem;
+  color: #eab308;
+  letter-spacing: 0.4em;
+  margin: 14px 0;
+}
+
+.credits-items-list {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 22px;
+  width: 100%;
+}
+
+.credits-rapper-card {
   padding: 12px 28px;
   border-radius: var(--radius-full);
-  font-weight: 800;
-  font-size: 1.15rem;
-  box-shadow: 0 14px 38px rgba(0, 0, 0, 0.8);
-  animation: rapperCenterStreamUp 6.8s cubic-bezier(0.18, 0.7, 0.2, 1) forwards;
+  background: rgba(18, 18, 22, 0.95);
+  border-width: 2px;
+  border-style: solid;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 16px;
   font-family: var(--font-sans);
-  letter-spacing: -0.02em;
   white-space: nowrap;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.85);
+  transition: transform 0.2s ease;
+}
+
+.credits-rapper-role {
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #aaa;
+  min-width: 110px;
+  text-align: right;
+}
+
+.credits-rapper-name-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.credits-rapper-name {
+  font-size: 1.35rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.credits-rapper-badge {
+  font-size: 0.68rem;
+  font-weight: 800;
+  padding: 3px 9px;
+  border-radius: var(--radius-full);
+  letter-spacing: 0.05em;
+}
+
+.credits-outro-block {
+  text-align: center;
+  margin-top: 40px;
 }
 
 /* Scrollbar */

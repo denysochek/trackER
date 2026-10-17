@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { X, Lock, ShieldCheck, User, KeyRound, Mail, Sparkles, ArrowRight } from 'lucide-react';
-import { hashPasswordForAuth, deriveEncryptionKey, generateSalt } from '../utils/crypto';
+import React, { useState, useEffect } from "react";
+import { X, Lock, ShieldCheck, User, KeyRound, Sparkles, ArrowRight, Trash2, CheckCircle2, Crown } from "lucide-react";
+import { hashPasswordForAuth, deriveEncryptionKey, generateSalt } from "../utils/crypto";
 
 export function AuthModal({
   isOpen,
@@ -10,45 +10,68 @@ export function AuthModal({
 }) {
   if (!isOpen) return null;
 
-  const [tab, setTab] = useState('login'); // 'login' or 'signup'
-  const [username, setUsername] = useState('');
-  const [artistName, setArtistName] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [errorMessage, setErrorMessage] = useState('');
+  // Check if any accounts exist to smartly default to signup or login
+  const hasExistingAccounts = () => {
+    try {
+      const reg = JSON.parse(localStorage.getItem("tracker_users_registry") || "{}");
+      return Object.keys(reg).length > 0;
+    } catch (e) {
+      return false;
+    }
+  };
+
+  const [tab, setTab] = useState(() => (hasExistingAccounts() ? "login" : "signup")); // "login" or "signup"
+  const [username, setUsername] = useState("");
+  const [artistName, setArtistName] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
+  useEffect(() => {
+    if (isOpen) {
+      setErrorMessage("");
+      setSuccessMessage("");
+      if (!hasExistingAccounts()) {
+        setTab("signup");
+      }
+    }
+  }, [isOpen]);
+
   const resetForm = () => {
-    setUsername('');
-    setArtistName('');
-    setPassword('');
-    setConfirmPassword('');
-    setErrorMessage('');
+    setUsername("");
+    setArtistName("");
+    setPassword("");
+    setConfirmPassword("");
+    setErrorMessage("");
   };
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    setErrorMessage('');
+    setErrorMessage("");
+    setSuccessMessage("");
     if (!username.trim() || !password) {
-      setErrorMessage(t.fillAllFields);
+      setErrorMessage(t.fillAllFields || "Будь ласка, заповніть усі поля.");
       return;
     }
 
     setIsLoading(true);
     try {
-      const usersRegistry = JSON.parse(localStorage.getItem('tracker_users_registry') || '{}');
-      const userRecord = usersRegistry[username.trim().toLowerCase()];
+      const usersRegistry = JSON.parse(localStorage.getItem("tracker_users_registry") || "{}");
+      const normalizedUser = username.trim().toLowerCase();
+      const userRecord = usersRegistry[normalizedUser];
 
       if (!userRecord) {
-        setErrorMessage(t.invalidCredentials);
+        setErrorMessage(t.invalidCredentials || "Користувача не знайдено або пароль невірний.");
         setIsLoading(false);
         return;
       }
 
-      // Hash password with user's stored salt
+      // Hash password with stored salt
       const computedAuthHash = await hashPasswordForAuth(password, userRecord.salt);
       if (computedAuthHash !== userRecord.authHash) {
-        setErrorMessage(t.invalidCredentials);
+        setErrorMessage(t.invalidCredentials || "Користувача не знайдено або пароль невірний.");
         setIsLoading(false);
         return;
       }
@@ -56,18 +79,21 @@ export function AuthModal({
       // Derive AES encryption key
       const encryptionKey = await deriveEncryptionKey(password, userRecord.salt);
 
+      const isAdmin = userRecord.isAdmin || normalizedUser === "dionisii";
+
       onLoginSuccess({
         username: userRecord.username,
         artistName: userRecord.artistName || userRecord.username,
         salt: userRecord.salt,
-        encryptionKey
+        encryptionKey,
+        isAdmin
       });
 
       resetForm();
       onClose();
     } catch (err) {
       console.error(err);
-      setErrorMessage('Crypto error during login.');
+      setErrorMessage("Помилка авторизації.");
     } finally {
       setIsLoading(false);
     }
@@ -75,36 +101,38 @@ export function AuthModal({
 
   const handleSignUp = async (e) => {
     e.preventDefault();
-    setErrorMessage('');
+    setErrorMessage("");
+    setSuccessMessage("");
 
-    if (!username.trim() || !password) {
-      setErrorMessage(t.fillAllFields);
+    if (!username.trim() || !password || !confirmPassword) {
+      setErrorMessage(t.fillAllFields || "Будь ласка, заповніть усі поля.");
       return;
     }
 
     if (password !== confirmPassword) {
-      setErrorMessage(t.passwordsMismatch);
+      setErrorMessage(t.passwordsMismatch || "Паролі не співпадають!");
       return;
     }
 
     if (password.length < 4) {
-      setErrorMessage('Пароль має містити щонайменше 4 символи');
+      setErrorMessage("Пароль має містити щонайменше 4 символи");
       return;
     }
 
     setIsLoading(true);
     try {
-      const usersRegistry = JSON.parse(localStorage.getItem('tracker_users_registry') || '{}');
+      const usersRegistry = JSON.parse(localStorage.getItem("tracker_users_registry") || "{}");
       const normalizedUser = username.trim().toLowerCase();
 
-      if (normalizedUser === 'guest') {
-        setErrorMessage(t.guestUsernameReserved || "Ім'я 'guest' зарезервоване для гостей. Будь ласка, оберіть інший нікнейм.");
+      // STRICTLY BLOCK GUEST ACCOUNT REGISTRATION
+      if (normalizedUser === "guest") {
+        setErrorMessage(t.guestUsernameReserved || "Нікнейм \"guest\" зарезервований для гостей. Оберіть інше ім’я.");
         setIsLoading(false);
         return;
       }
 
       if (usersRegistry[normalizedUser]) {
-        setErrorMessage(t.userAlreadyExists);
+        setErrorMessage(t.userAlreadyExists || "Користувач із таким нікнеймом уже існує.");
         setIsLoading(false);
         return;
       }
@@ -118,30 +146,54 @@ export function AuthModal({
       // Derive AES-256 encryption key
       const encryptionKey = await deriveEncryptionKey(password, salt);
 
-      // Store in users registry (Never storing the plain password!)
+      // User dionisii is automatically granted Admin rights!
+      const isAdmin = normalizedUser === "dionisii";
+
+      // Store in users registry
       usersRegistry[normalizedUser] = {
         username: username.trim(),
         artistName: artistName.trim() || username.trim(),
         salt,
         authHash,
+        isAdmin,
         createdAt: new Date().toISOString()
       };
-      localStorage.setItem('tracker_users_registry', JSON.stringify(usersRegistry));
+      localStorage.setItem("tracker_users_registry", JSON.stringify(usersRegistry));
 
       onLoginSuccess({
         username: username.trim(),
         artistName: artistName.trim() || username.trim(),
         salt,
-        encryptionKey
+        encryptionKey,
+        isAdmin
       });
 
       resetForm();
       onClose();
     } catch (err) {
       console.error(err);
-      setErrorMessage('Crypto error during registration.');
+      setErrorMessage("Помилка генерації крипто-ключа при реєстрації.");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleWipeAllAccounts = () => {
+    if (window.confirm(t.wipeAccountsConfirm || "Ви дійсно хочете видалити всі зареєстровані акаунти? Усі старі профілі буде очищено.")) {
+      try {
+        localStorage.removeItem("tracker_users_registry");
+        Object.keys(localStorage).forEach(key => {
+          if (key.startsWith("tracker_vault_")) {
+            localStorage.removeItem(key);
+          }
+        });
+        localStorage.removeItem("tracker_user_session");
+        resetForm();
+        setTab("signup");
+        setSuccessMessage(t.wipeAccountsSuccess || "Всі акаунти успішно видалено! Тепер ви можете створити новий акаунт.");
+      } catch (err) {
+        console.error(err);
+      }
     }
   };
 
@@ -150,25 +202,25 @@ export function AuthModal({
       <div className="modal-card" style={{ maxWidth: 460 }} onClick={(e) => e.stopPropagation()}>
         
         {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <div style={{
               width: 36,
               height: 36,
               borderRadius: 10,
-              background: 'var(--accent-subtle)',
-              border: '1px solid rgba(var(--accent-rgb), 0.2)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
+              background: "var(--accent-subtle)",
+              border: "1px solid rgba(var(--accent-rgb), 0.2)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center"
             }}>
               <ShieldCheck size={20} color="var(--accent)" />
             </div>
             <div>
-              <h2 style={{ fontSize: '1.2rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-                {tab === 'login' ? t.signIn : t.signUp}
+              <h2 style={{ fontSize: "1.2rem", fontWeight: 600, color: "var(--text-primary)" }}>
+                {tab === "login" ? t.signIn : t.signUp}
               </h2>
-              <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+              <p style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
                 {t.encryptedVault}
               </p>
             </div>
@@ -180,20 +232,20 @@ export function AuthModal({
         </div>
 
         {/* Tab Switcher */}
-        <div className="segmented-control" style={{ width: '100%', marginBottom: 20 }}>
+        <div className="segmented-control" style={{ width: "100%", marginBottom: 18 }}>
           <button
             type="button"
-            onClick={() => { setTab('login'); setErrorMessage(''); }}
-            className={`segmented-control-btn ${tab === 'login' ? 'active' : ''}`}
-            style={{ flex: 1, justifyContent: 'center', padding: '6px' }}
+            onClick={() => { setTab("login"); setErrorMessage(""); setSuccessMessage(""); }}
+            className={`segmented-control-btn ${tab === "login" ? "active" : ""}`}
+            style={{ flex: 1, justifyContent: "center", padding: "6px" }}
           >
             {t.signIn}
           </button>
           <button
             type="button"
-            onClick={() => { setTab('signup'); setErrorMessage(''); }}
-            className={`segmented-control-btn ${tab === 'signup' ? 'active' : ''}`}
-            style={{ flex: 1, justifyContent: 'center', padding: '6px' }}
+            onClick={() => { setTab("signup"); setErrorMessage(""); setSuccessMessage(""); }}
+            className={`segmented-control-btn ${tab === "signup" ? "active" : ""}`}
+            style={{ flex: 1, justifyContent: "center", padding: "6px" }}
           >
             {t.signUp}
           </button>
@@ -201,56 +253,80 @@ export function AuthModal({
 
         {/* Notice on Client-Side Encryption */}
         <div style={{
-          background: 'var(--bg-pill)',
-          border: '1px solid var(--border-subtle)',
-          borderRadius: 'var(--radius-md)',
-          padding: '10px 12px',
-          marginBottom: 18,
-          display: 'flex',
+          background: "var(--bg-pill)",
+          border: "1px solid var(--border-subtle)",
+          borderRadius: "var(--radius-md)",
+          padding: "10px 12px",
+          marginBottom: 16,
+          display: "flex",
           gap: 10,
-          alignItems: 'flex-start'
+          alignItems: "flex-start"
         }}>
           <Lock size={15} color="var(--accent)" style={{ flexShrink: 0, marginTop: 2 }} />
-          <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', lineHeight: 1.45 }}>
+          <p style={{ fontSize: "0.75rem", color: "var(--text-secondary)", lineHeight: 1.45 }}>
             {t.encryptionNotice}
           </p>
         </div>
 
+        {/* Success message banner */}
+        {successMessage && (
+          <div style={{
+            background: "rgba(34, 197, 94, 0.1)",
+            color: "var(--color-success)",
+            border: "1px solid rgba(34, 197, 94, 0.3)",
+            borderRadius: "var(--radius-sm)",
+            padding: "8px 12px",
+            fontSize: "0.8rem",
+            marginBottom: 14,
+            display: "flex",
+            alignItems: "center",
+            gap: 8
+          }}>
+            <CheckCircle2 size={16} />
+            <span>{successMessage}</span>
+          </div>
+        )}
+
         {/* Form */}
-        <form onSubmit={tab === 'login' ? handleLogin : handleSignUp} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          {tab === 'signup' && (
+        <form onSubmit={tab === "login" ? handleLogin : handleSignUp} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+          {tab === "signup" && (
             <div>
-              <label style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginBottom: 5, display: 'block' }}>
+              <label style={{ fontSize: "0.78rem", color: "var(--text-secondary)", marginBottom: 5, display: "block" }}>
                 {t.artist}
               </label>
-              <div style={{ position: 'relative' }}>
-                <input
-                  type="text"
-                  value={artistName}
-                  onChange={(e) => setArtistName(e.target.value)}
-                  placeholder="напр. Metro Boomin або O.Torvald"
-                  className="input"
-                />
-              </div>
+              <input
+                type="text"
+                value={artistName}
+                onChange={(e) => setArtistName(e.target.value)}
+                placeholder="напр. Metro Boomin або O.Torvald"
+                className="input"
+              />
             </div>
           )}
 
           <div>
-            <label style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginBottom: 5, display: 'block' }}>
-              {t.username} *
-            </label>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 5 }}>
+              <label style={{ fontSize: "0.78rem", color: "var(--text-secondary)" }}>
+                {t.username} *
+              </label>
+              {username.trim().toLowerCase() === "dionisii" && (
+                <span style={{ fontSize: "0.68rem", color: "#eab308", fontWeight: 700, display: "inline-flex", alignItems: "center", gap: 4 }}>
+                  <Crown size={11} /> {t.adminRole || "Адміністратор"}
+                </span>
+              )}
+            </div>
             <input
               type="text"
               required
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              placeholder="studio_pro"
+              placeholder="dionisii"
               className="input"
             />
           </div>
 
           <div>
-            <label style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginBottom: 5, display: 'block' }}>
+            <label style={{ fontSize: "0.78rem", color: "var(--text-secondary)", marginBottom: 5, display: "block" }}>
               {t.password} *
             </label>
             <input
@@ -263,9 +339,9 @@ export function AuthModal({
             />
           </div>
 
-          {tab === 'signup' && (
+          {tab === "signup" && (
             <div>
-              <label style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginBottom: 5, display: 'block' }}>
+              <label style={{ fontSize: "0.78rem", color: "var(--text-secondary)", marginBottom: 5, display: "block" }}>
                 {t.confirmPassword} *
               </label>
               <input
@@ -281,12 +357,12 @@ export function AuthModal({
 
           {errorMessage && (
             <div style={{
-              background: 'var(--color-danger-bg)',
-              color: 'var(--color-danger)',
-              border: '1px solid rgba(255, 59, 48, 0.2)',
-              borderRadius: 'var(--radius-sm)',
-              padding: '8px 12px',
-              fontSize: '0.8rem'
+              background: "var(--color-danger-bg)",
+              color: "var(--color-danger)",
+              border: "1px solid rgba(255, 59, 48, 0.2)",
+              borderRadius: "var(--radius-sm)",
+              padding: "8px 12px",
+              fontSize: "0.8rem"
             }}>
               {errorMessage}
             </div>
@@ -296,20 +372,33 @@ export function AuthModal({
             type="submit"
             disabled={isLoading}
             className="btn btn-primary"
-            style={{ width: '100%', marginTop: 6, padding: '10px' }}
+            style={{ width: "100%", marginTop: 6, padding: "10px" }}
           >
-            {isLoading ? 'Шифрування...' : tab === 'login' ? t.signIn : t.signUp}
+            {isLoading ? "Шифрування..." : tab === "login" ? t.signIn : t.signUp}
             <ArrowRight size={14} />
           </button>
 
-          <button
-            type="button"
-            onClick={onClose}
-            className="btn btn-ghost btn-sm"
-            style={{ marginTop: 2 }}
-          >
-            {t.guestMode}
-          </button>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 4 }}>
+            <button
+              type="button"
+              onClick={onClose}
+              className="btn btn-ghost btn-sm"
+              style={{ fontSize: "0.75rem" }}
+            >
+              {t.guestMode}
+            </button>
+
+            <button
+              type="button"
+              onClick={handleWipeAllAccounts}
+              className="btn btn-ghost btn-sm"
+              style={{ fontSize: "0.75rem", color: "var(--color-danger)", display: "flex", alignItems: "center", gap: 4 }}
+              title="Видалити всі старі акаунти та почати з чистого аркуша"
+            >
+              <Trash2 size={12} />
+              <span>{t.wipeAccounts || "Видалити всі акаунти"}</span>
+            </button>
+          </div>
         </form>
 
       </div>

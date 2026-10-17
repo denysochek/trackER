@@ -311,20 +311,38 @@ export function TrackCard({
         gap: 10
       }}>
         {STAGES.map(stage => {
-          const isInstOrSkit = track.type === 'instrumental' || track.type === 'skit';
-          
-          // Skip vocal stage for instrumental/skit tracks
-          if (isInstOrSkit && stage.id === 'vocal') {
+          const isSkit = track.type === 'skit';
+          const isInst = track.type === 'instrumental';
+
+          // 1. Instrumental: vocal is not needed
+          if (isInst && stage.id === 'vocal') {
             return (
               <div key={stage.id} style={{
                 background: "var(--bg-card-secondary)",
                 border: "1px solid var(--border-subtle)",
                 borderRadius: "var(--radius-md)",
                 padding: "8px 10px",
-                opacity: 0.4
+                opacity: 0.45
               }}>
                 <div style={{ fontSize: "0.74rem", fontWeight: 600, color: "var(--text-muted)" }}>
                   {t.stageVocal} — <em>{t.vocalNotApplicable || "Не потрібен"}</em>
+                </div>
+              </div>
+            );
+          }
+
+          // 2. Skit: visual is not needed
+          if (isSkit && stage.id === 'visual') {
+            return (
+              <div key={stage.id} style={{
+                background: "var(--bg-card-secondary)",
+                border: "1px solid var(--border-subtle)",
+                borderRadius: "var(--radius-md)",
+                padding: "8px 10px",
+                opacity: 0.45
+              }}>
+                <div style={{ fontSize: "0.74rem", fontWeight: 600, color: "var(--text-muted)" }}>
+                  {t.stageVisual} — <em>{t.visualNotApplicable || "Не потрібен"}</em>
                 </div>
               </div>
             );
@@ -335,10 +353,34 @@ export function TrackCard({
             : stage.id === "vocal" 
             ? t.stageVocal 
             : t.stageVisual;
-          
-          // For inst/skit, beat is only 3 pts (demo + arr + mix/master combined)
-          const displayMaxPts = isInstOrSkit && stage.id === 'beat' ? 3 : stage.maxPoints;
-          
+
+          // Compute max pts for this stage
+          let displayMaxPts = stage.maxPoints;
+          if (isSkit) {
+            if (stage.id === 'beat') displayMaxPts = 2;
+            if (stage.id === 'vocal') displayMaxPts = 3;
+          } else if (isInst) {
+            if (stage.id === 'beat') displayMaxPts = 3;
+            if (stage.id === 'visual') displayMaxPts = 2;
+          }
+
+          // Filter steps according to track type
+          let stepsToShow = stage.steps;
+          if (isSkit) {
+            if (stage.id === 'beat') {
+              // 2 checkboxes: Demo + Arrangement
+              stepsToShow = stage.steps.filter(s => s.id === 'step_beat_demo' || s.id === 'step_beat_arr');
+            } else if (stage.id === 'vocal') {
+              // 3 checkboxes: Lyrics/Script + Recording + Mix/FX
+              stepsToShow = stage.steps.filter(s => s.id === 'step_voc_lyrics' || s.id === 'step_voc_rec' || s.id === 'step_voc_mix');
+            }
+          } else if (isInst) {
+            if (stage.id === 'beat') {
+              // 3 checkboxes: Demo + Arrangement + Mix/Master
+              stepsToShow = stage.steps.filter(s => s.id !== 'step_beat_master');
+            }
+          }
+
           return (
             <div
               key={stage.id}
@@ -360,18 +402,24 @@ export function TrackCard({
               }}>
                 <span>{stageName}</span>
                 <span className="font-mono" style={{ fontSize: "0.68rem", opacity: 0.8 }}>
-                  Max {displayMaxPts || stage.maxPoints} pts
+                  Max {displayMaxPts} pts
                 </span>
               </div>
 
               <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-                {stage.steps
-                  .filter(step => !(isInstOrSkit && stage.id === 'beat' && step.id === 'step_beat_master'))
-                  .map(step => {
-                    const isChecked = !!(track.steps && track.steps[step.id]);
-                    const label = (isInstOrSkit && step.id === 'step_beat_mix')
-                      ? 'Зведення та Мастеринг'
-                      : (t[step.id] || step.id);
+                {stepsToShow.map(step => {
+                  const isChecked = !!(track.steps && track.steps[step.id]);
+                  let label = t[step.id] || step.id;
+                  if (isInst && step.id === 'step_beat_mix') {
+                    label = t.mixAndMaster || "Зведення та Мастеринг";
+                  } else if (isSkit && step.id === 'step_voc_lyrics') {
+                    label = t.skitScript || "Сценарій / Текст";
+                  } else if (isSkit && step.id === 'step_voc_rec') {
+                    label = t.skitVoiceRec || "Запис голосу";
+                  } else if (isSkit && step.id === 'step_voc_mix') {
+                    label = t.skitVoiceMix || "Зведення та FX";
+                  }
+
                   const desc = t[`${step.id}_desc`] || "";
 
                   return (
