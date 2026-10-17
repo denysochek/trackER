@@ -187,25 +187,58 @@ export default function App() {
 
 
 
-  // Automatically check recipient inbox for shared albums sent to this user
+  // Automatically check recipient inbox for shared albums sent to this user (Local + Global Cloud Relay)
   useEffect(() => {
     if (!currentUser || !currentUser.username) return;
 
-    const checkInbox = () => {
+    const checkInbox = async () => {
       try {
-        const inboxKey = "tracker_shared_inbox_" + currentUser.username.toLowerCase();
-        const raw = localStorage.getItem(inboxKey);
-        if (!raw) return;
+        const usernameLower = currentUser.username.toLowerCase();
+        const inboxKey = "tracker_shared_inbox_" + usernameLower;
 
-        const inbox = JSON.parse(raw);
-        if (Array.isArray(inbox) && inbox.length > 0) {
-          // Process all incoming shared albums into current user albums
+        // 1. Check local inbox
+        const raw = localStorage.getItem(inboxKey);
+        let inboxItems = [];
+        if (raw) {
+          try {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed)) inboxItems.push(...parsed);
+          } catch (e) {}
+        }
+
+        // 2. Poll Global Cloud Relay via ntfy.sh public CORS endpoint
+        // This delivers albums sent between different computers, phones, or incognito sessions!
+        const topic = `trackER_inbox_${usernameLower}`;
+        try {
+          const res = await fetch(`https://ntfy.sh/${topic}/json?poll=1`, { cache: "no-store" });
+          if (res.ok) {
+            const lines = (await res.text()).trim().split("\n");
+            for (const line of lines) {
+              if (!line) continue;
+              try {
+                const msgObj = JSON.parse(line);
+                if (msgObj && msgObj.message) {
+                  const albumPayload = JSON.parse(msgObj.message);
+                  if (albumPayload && albumPayload.title && Array.isArray(albumPayload.tracks)) {
+                    inboxItems.push(albumPayload);
+                  }
+                }
+              } catch (parseErr) {}
+            }
+          }
+        } catch (cloudErr) {
+          console.warn("Cloud relay inbox check note:", cloudErr);
+        }
+
+        if (inboxItems.length > 0) {
           setAlbums(prevAlbums => {
             let updated = [...prevAlbums];
             let addedCount = 0;
 
-            inbox.forEach(sharedItem => {
-              const alreadyExists = updated.some(a => a.id === sharedItem.id);
+            inboxItems.forEach(sharedItem => {
+              const alreadyExists = updated.some(a => 
+                a.id === sharedItem.id || (a.title === sharedItem.title && a.sharedByUsername === sharedItem.sharedByUsername)
+              );
               if (!alreadyExists) {
                 updated.unshift({
                   ...sharedItem,
@@ -218,7 +251,7 @@ export default function App() {
 
             if (addedCount > 0) {
               persistAlbums(updated);
-              setCurrentAlbumId(inbox[0].id);
+              setCurrentAlbumId(inboxItems[0].id);
               setCurrentView("studio");
               triggerConfetti();
             }
@@ -226,7 +259,7 @@ export default function App() {
             return updated;
           });
 
-          // Clear inbox after incorporating
+          // Clear local inbox after incorporating
           localStorage.removeItem(inboxKey);
         }
       } catch (err) {
@@ -236,7 +269,13 @@ export default function App() {
 
     checkInbox();
     window.addEventListener("storage", checkInbox);
-    return () => window.removeEventListener("storage", checkInbox);
+    // Poll cloud inbox every 8 seconds while logged in
+    const pollInterval = setInterval(checkInbox, 8000);
+
+    return () => {
+      window.removeEventListener("storage", checkInbox);
+      clearInterval(pollInterval);
+    };
   }, [currentUser]);
 
   // Handle Shared Album from URL hash (#share=...)

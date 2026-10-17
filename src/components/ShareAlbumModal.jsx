@@ -23,8 +23,8 @@ export function ShareAlbumModal({
   const progressPercent = calculateAlbumProgress(tracks);
   const finishedCount = tracks.filter(tr => isTrackFinished(tr)).length;
 
-  // Direct User-to-User Sharing (Instant inbox delivery to recipient account)
-  const handleShareToUser = (e) => {
+  // Direct User-to-User Sharing (Instant Cloud Relay + Local Inbox delivery)
+  const handleShareToUser = async (e) => {
     e.preventDefault();
     setShareStatus(null);
     const trimmedTarget = targetUsername.trim().toLowerCase();
@@ -42,20 +42,7 @@ export function ShareAlbumModal({
     setIsSubmitting(true);
 
     try {
-      // 1. Verify that recipient exists in user registry
-      const usersRegistry = JSON.parse(localStorage.getItem("tracker_users_registry") || "{}");
-      const targetUserRecord = usersRegistry[trimmedTarget];
-
-      if (!targetUserRecord) {
-        setShareStatus({
-          type: "error",
-          message: `${t.userNotFound || "Користувача не знайдено:"} "@${targetUsername.trim()}"`
-        });
-        setIsSubmitting(false);
-        return;
-      }
-
-      // 2. Prepare shared album payload
+      // 1. Prepare shared album payload
       const sharedItem = {
         id: `shared-${album.id}-${Date.now()}`,
         originalAlbumId: album.id,
@@ -71,33 +58,37 @@ export function ShareAlbumModal({
         sharedAt: new Date().toISOString()
       };
 
-      // 3. Put into recipient inbox
+      // 2. Put into local inbox (if on same device or same browser)
       const inboxKey = `tracker_shared_inbox_${trimmedTarget}`;
       const currentInbox = JSON.parse(localStorage.getItem(inboxKey) || "[]");
-
-      // Check if already shared
       const alreadyExists = currentInbox.some(
         item => item.originalAlbumId === album.id && item.sharedByUsername === sharedItem.sharedByUsername
       );
 
-      if (alreadyExists) {
-        setShareStatus({
-          type: "error",
-          message: t.alreadySharedToUser || "Цей альбом уже надіслано цьому користувачу."
-        });
-        setIsSubmitting(false);
-        return;
+      if (!alreadyExists) {
+        currentInbox.unshift(sharedItem);
+        localStorage.setItem(inboxKey, JSON.stringify(currentInbox));
+        window.dispatchEvent(new Event("storage"));
       }
 
-      currentInbox.unshift(sharedItem);
-      localStorage.setItem(inboxKey, JSON.stringify(currentInbox));
-
-      // Trigger custom storage event for live inter-tab synchronization
-      window.dispatchEvent(new Event("storage"));
+      // 3. Put into Global Cloud Relay via ntfy.sh (works across different devices, phones, PCs!)
+      const topic = `trackER_inbox_${trimmedTarget}`;
+      try {
+        await fetch(`https://ntfy.sh/${topic}`, {
+          method: "POST",
+          headers: {
+            "Title": `trackER: New Album from @${sharedItem.sharedByUsername}`,
+            "Tags": "cd,package"
+          },
+          body: JSON.stringify(sharedItem)
+        });
+      } catch (cloudErr) {
+        console.warn("Cloud relay fetch note:", cloudErr);
+      }
 
       setShareStatus({
         type: "success",
-        message: `${t.shareSuccessMsg || "Альбом успішно надіслано!"} @${targetUserRecord.username} (${targetUserRecord.artistName || targetUserRecord.username})`
+        message: `${t.shareSuccessMsg || "Альбом успішно надіслано!"} @${targetUsername.trim()}`
       });
       setTargetUsername("");
     } catch (err) {
