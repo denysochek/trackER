@@ -132,13 +132,7 @@ export function AlbumHero({
                 <span>{t.shareAlbum || "Поділитися"}</span>
               </button>
 
-              <button
-                onClick={onOpenConceptModal}
-                className="btn btn-secondary btn-sm"
-              >
-                <FileEdit size={13} />
-                <span>{t.albumConcept}</span>
-              </button>
+              
 
               <button
                 onClick={onOpenAlbumKey}
@@ -158,34 +152,7 @@ export function AlbumHero({
             </div>
 
             {/* Album Notes / Concept displayed right beside the album */}
-            {album.concept && (
-              <div 
-                onClick={onOpenConceptModal}
-                style={{
-                  marginTop: 14,
-                  padding: '10px 14px',
-                  background: 'var(--bg-card-secondary)',
-                  border: '1px solid var(--border-subtle)',
-                  borderRadius: 'var(--radius-md)',
-                  fontSize: '0.82rem',
-                  color: 'var(--text-secondary)',
-                  cursor: 'pointer',
-                  maxHeight: 76,
-                  overflow: 'hidden',
-                  position: 'relative',
-                  lineHeight: 1.45
-                }}
-                title="Натисніть для перегляду та редагування концепції"
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 700, color: 'var(--accent)', fontSize: '0.74rem', textTransform: 'uppercase', marginBottom: 3 }}>
-                  <FileEdit size={11} />
-                  <span>{t.albumNotesTitle || 'Нотатки та концепція альбому'}</span>
-                </div>
-                <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
-                  {album.concept.replace(/^[#\s\-*]+/gm, '').slice(0, 180)}...
-                </div>
-              </div>
-            )}
+            
 
 
           </div>

@@ -534,8 +534,8 @@ export default function App() {
           t={t}
           onEditAlbum={() => setIsEditAlbumModalOpen(true)}
           onDeleteAlbum={handleDeleteAlbum}
-          onOpenConceptModal={() => setIsConceptModalOpen(true)}
           onOpenAlbumKey={() => setIsAlbumKeyModalOpen(true)}
+          onOpenShareModal={() => setIsShareModalOpen(true)}
           onTriggerEgg={(egg) => setActiveEgg(egg)}
         />
 
@@ -715,6 +715,50 @@ export default function App() {
         )}
           </>
         )}
+
+        
+        {/* Always-Available Bottom Album Notes & Concept Field */}
+        <div style={{
+          marginTop: 28,
+          marginBottom: 16,
+          background: "var(--bg-card)",
+          border: "1px solid var(--border-medium)",
+          borderRadius: "var(--radius-xl)",
+          padding: "20px 24px",
+          boxShadow: "var(--shadow-sm)"
+        }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <FileEdit size={16} color="var(--accent)" />
+              <strong style={{ fontSize: "0.95rem", color: "var(--text-primary)" }}>
+                {t.albumNotesTitle || "Концепція та нотатки альбому"}
+              </strong>
+            </div>
+            <span style={{ fontSize: "0.74rem", color: "var(--text-muted)" }}>
+              {t.changesSaved || "Зберігається автоматично"}
+            </span>
+          </div>
+
+          <textarea
+            value={currentAlbum.concept || ""}
+            onChange={(e) => handleSaveAlbum({ ...currentAlbum, concept: e.target.value })}
+            placeholder={t.addNotesPlaceholder || "Записуйте сюди концепцію альбому, ідеї, текст, референси чи технічні деталі зведення..."}
+            className="textarea"
+            style={{
+              width: "100%",
+              minHeight: 110,
+              fontSize: "0.88rem",
+              lineHeight: 1.55,
+              background: "var(--bg-card-secondary)",
+              border: "1px solid var(--border-subtle)",
+              borderRadius: "var(--radius-md)",
+              padding: "12px 14px",
+              resize: "vertical",
+              color: "var(--text-primary)",
+              fontFamily: "inherit"
+            }}
+          />
+        </div>
 
         {/* Footer with credit, compact restored disc button, and hidden big board button */}
         <footer className="page-bottom-bar">
