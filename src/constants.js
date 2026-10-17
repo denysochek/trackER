@@ -39,8 +39,8 @@ export const STAGES = [
 ];
 
 export const PRESET_COVERS = [
-  { id: "cyan_poly", title: "Neon Poly", url: "/covers/demo_cyan.jpg" },
-  { id: "green_sphere", title: "Acid Frequency", url: "/covers/demo_green.jpg" },
+  { id: "cyan_poly", title: "Neon Poly", url: `${import.meta.env.BASE_URL}covers/demo_cyan.jpg` },
+  { id: "green_sphere", title: "Acid Frequency", url: `${import.meta.env.BASE_URL}covers/demo_green.jpg` },
   { id: "dark_astral", title: "Deep Astral", url: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80" },
   { id: "retro_grid", title: "Cyber Horizon", url: "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&w=800&q=80" },
   { id: "analog_tape", title: "Studio Noir", url: "https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?auto=format&fit=crop&w=800&q=80" }
@@ -140,7 +140,7 @@ export const INITIAL_ALBUMS = [
     artist: "CYBERWAVE & METAPROD",
     genre: "Electronic / Cyber-Trap",
     targetDate: "2026-12-25",
-    coverUrl: "/covers/demo_cyan.jpg",
+    coverUrl: `${import.meta.env.BASE_URL}covers/demo_cyan.jpg`,
     concept: "## Концепція альбому\n\nФутуристична нічна подорож крізь неонове кібер-місто. Поєднання аналогових синтезаторів Moog, агресивних 808-х басів та кінематографічного вокалу з автотюном.\n\n- **Ключовий настрій**: Глибокий, енергійний, нічний драйв\n- **Референси звучання**: Travis Scott, Gesaffelstein, The Weeknd (After Hours)\n- **Студійний сетап**: 48kHz / 24-bit, аналоговий майстеринг на фіналі.",
     tracks: [
       {

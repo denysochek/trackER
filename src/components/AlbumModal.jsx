@@ -135,7 +135,7 @@ export function AlbumModal({
                 <img
                   src={coverUrl}
                   alt="Cover Preview"
-                  onError={(e) => { e.currentTarget.src = "/covers/demo_cyan.jpg"; }}
+                  onError={(e) => { e.currentTarget.src = `${import.meta.env.BASE_URL}covers/demo_cyan.jpg`; }}
                   style={{ width: "100%", height: "100%", objectFit: "cover" }}
                 />
               </div>

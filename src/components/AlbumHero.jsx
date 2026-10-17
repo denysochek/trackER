@@ -56,10 +56,10 @@ export function AlbumHero({
               }}
             >
               <img
-                src={album.coverUrl || "/covers/demo_cyan.jpg"}
+                src={album.coverUrl || `${import.meta.env.BASE_URL}covers/demo_cyan.jpg`}
                 alt={album.title}
                 onError={(e) => {
-                  e.currentTarget.src = "/covers/demo_cyan.jpg";
+                  e.currentTarget.src = `${import.meta.env.BASE_URL}covers/demo_cyan.jpg`;
                 }}
                 style={{
                   width: "100%",
