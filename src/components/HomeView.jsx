@@ -1,5 +1,6 @@
 import React from "react";
-import { Plus, Disc3, Music2, CheckCircle2, TrendingUp, Layers, ArrowRight } from "lucide-react";
+import { useState } from "react";
+import { Plus, Disc3, Music2, CheckCircle2, TrendingUp, Layers, ArrowRight, User, Share2, FolderHeart, Sparkles } from "lucide-react";
 import { calculateAlbumProgress, isTrackFinished } from "../constants";
 
 export function HomeView({
@@ -9,6 +10,16 @@ export function HomeView({
   currentUser,
   t
 }) {
+  const [albumSourceFilter, setAlbumSourceFilter] = useState("all"); // 'all' | 'my' | 'shared'
+
+  const myAlbums = albums.filter(a => !a.sharedBy && !a.sharedByUsername);
+  const sharedAlbums = albums.filter(a => !!a.sharedBy || !!a.sharedByUsername);
+
+  const displayedAlbums = albumSourceFilter === "my"
+    ? myAlbums
+    : albumSourceFilter === "shared"
+    ? sharedAlbums
+    : albums;
   const totalTracks = albums.reduce((acc, alb) => acc + (alb.tracks ? alb.tracks.length : 0), 0);
   
   const totalCompletedTracks = albums.reduce((acc, alb) => {
@@ -169,13 +180,59 @@ export function HomeView({
 
       {/* Albums Grid Section */}
       <div>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18 }}>
-          <h2 style={{ fontSize: "1.35rem", fontWeight: 700, color: "var(--text-primary)", margin: 0 }}>
-            {t.albums} ({albums.length})
-          </h2>
-          <span style={{ fontSize: "0.84rem", color: "var(--text-muted)" }}>
-            {t.selectAlbumPrompt || "Оберіть альбом для роботи в студії"}
-          </span>
+        <div style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          marginBottom: 18,
+          gap: 16,
+          flexWrap: "wrap"
+        }}>
+          <div>
+            <h2 style={{ fontSize: "1.35rem", fontWeight: 700, color: "var(--text-primary)", margin: "0 0 4px" }}>
+              {t.albums} ({displayedAlbums.length})
+            </h2>
+            <span style={{ fontSize: "0.84rem", color: "var(--text-muted)" }}>
+              {t.selectAlbumPrompt || "Оберіть альбом для роботи в студії"}
+            </span>
+          </div>
+
+          {/* Home View Source Filter: All / My Works / Shared With Me */}
+          <div style={{
+            display: "inline-flex",
+            background: "var(--bg-card-secondary)",
+            border: "1px solid var(--border-subtle)",
+            borderRadius: "var(--radius-full)",
+            padding: 4,
+            gap: 4
+          }}>
+            <button
+              onClick={() => setAlbumSourceFilter("all")}
+              className={`segmented-control-btn ${albumSourceFilter === "all" ? "active" : ""}`}
+              style={{ padding: "6px 14px", fontSize: "0.8rem" }}
+            >
+              <Layers size={13} />
+              <span>{t.allProjects || "Усі проєкти"} ({albums.length})</span>
+            </button>
+
+            <button
+              onClick={() => setAlbumSourceFilter("my")}
+              className={`segmented-control-btn ${albumSourceFilter === "my" ? "active" : ""}`}
+              style={{ padding: "6px 14px", fontSize: "0.8rem" }}
+            >
+              <User size={13} />
+              <span>{t.myWorks || "Мої роботи"} ({myAlbums.length})</span>
+            </button>
+
+            <button
+              onClick={() => setAlbumSourceFilter("shared")}
+              className={`segmented-control-btn ${albumSourceFilter === "shared" ? "active" : ""}`}
+              style={{ padding: "6px 14px", fontSize: "0.8rem" }}
+            >
+              <Share2 size={13} color="var(--accent)" />
+              <span>{t.sharedWithMe || "Поширені зі мною"} ({sharedAlbums.length})</span>
+            </button>
+          </div>
         </div>
 
         <div style={{
@@ -183,7 +240,24 @@ export function HomeView({
           gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))",
           gap: 20
         }}>
-          {albums.map((album) => {
+          {displayedAlbums.length === 0 ? (
+            <div style={{
+              gridColumn: "1 / -1",
+              textAlign: "center",
+              padding: "48px 20px",
+              background: "var(--bg-card)",
+              borderRadius: "var(--radius-xl)",
+              border: "1px dashed var(--border-medium)",
+              color: "var(--text-secondary)"
+            }}>
+              <p style={{ margin: 0, fontSize: "0.92rem" }}>
+                {albumSourceFilter === "shared" 
+                  ? (t.noSharedAlbums || "Вам ще ніхто не надсилав поширених альбомів.")
+                  : (t.noMyAlbums || "У вас ще немає створених альбомів.")}
+              </p>
+            </div>
+          ) : (
+            displayedAlbums.map((album) => {
             const tracks = album.tracks || [];
             const completed = tracks.filter(tr => isTrackFinished(tr)).length;
             const progress = calculateAlbumProgress(tracks);
@@ -234,6 +308,12 @@ export function HomeView({
                   </div>
 
                   <div style={{ flex: 1, minWidth: 0 }}>
+                    {album.sharedBy && (
+                      <span className="pill pill-accent" style={{ fontSize: "0.65rem", padding: "1px 7px", marginBottom: 4 }}>
+                        <Share2 size={9} />
+                        {album.sharedBy}
+                      </span>
+                    )}
                     <h3 style={{
                       margin: "0 0 4px",
                       fontSize: "1.15rem",
@@ -309,7 +389,8 @@ export function HomeView({
 
               </div>
             );
-          })}
+          })
+          )}
         </div>
       </div>
 

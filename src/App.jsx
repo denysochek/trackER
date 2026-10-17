@@ -500,10 +500,11 @@ export default function App() {
     const q = searchQuery.toLowerCase().trim();
     if (q) {
       const matchTitle = tr.title.toLowerCase().includes(q);
+      const matchCodeName = tr.codeName && tr.codeName.toLowerCase().includes(q);
       const matchKey = tr.key && tr.key.toLowerCase().includes(q);
       const matchBpm = tr.bpm && String(tr.bpm).includes(q);
       const matchNotes = tr.notes && tr.notes.toLowerCase().includes(q);
-      if (!matchTitle && !matchKey && !matchBpm && !matchNotes) return false;
+      if (!matchTitle && !matchCodeName && !matchKey && !matchBpm && !matchNotes) return false;
     }
 
     const s = tr.steps || {};

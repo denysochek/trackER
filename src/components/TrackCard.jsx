@@ -9,7 +9,9 @@ import {
   Activity, 
   Key, 
   Sparkles, 
-  Check
+  Check,
+  Hash,
+  Tag
 } from "lucide-react";
 import { STAGES, calculateTrackScore, getTrackMaxScore, isTrackFinished } from "../constants";
 import { playStudioClick } from "../utils/soundEffects";
@@ -180,8 +182,44 @@ export function TrackCard({
               </div>
             )}
 
-            {/* Quick Metadata */}
+            {/* Quick Metadata (Code Name, BPM, Key) */}
             <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 4, flexWrap: "wrap" }}>
+              {track.codeName ? (
+                <span
+                  onClick={() => setIsExpanded(true)}
+                  className="pill pill-accent"
+                  style={{
+                    fontSize: "0.7rem",
+                    padding: "1px 7px",
+                    fontWeight: 700,
+                    cursor: "pointer",
+                    letterSpacing: "0.03em"
+                  }}
+                  title={t.codeName || "Кодова назва треку (натисніть для зміни)"}
+                >
+                  <Tag size={10} />
+                  {track.codeName}
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setIsExpanded(true)}
+                  className="pill"
+                  style={{
+                    fontSize: "0.66rem",
+                    padding: "1px 6px",
+                    cursor: "pointer",
+                    opacity: 0.7,
+                    border: "1px dashed var(--border-medium)",
+                    background: "transparent"
+                  }}
+                  title={t.addCodeNamePrompt || "Додати кодову назву треку"}
+                >
+                  <Tag size={9} />
+                  <span>+{t.codeName || "Кодова назва"}</span>
+                </button>
+              )}
+
               {track.bpm && (
                 <span className="pill" style={{ fontSize: "0.68rem", padding: "1px 6px" }}>
                   <Activity size={10} color="var(--accent)" />
@@ -479,7 +517,22 @@ export function TrackCard({
           gap: 14
         }}>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr 1fr", gap: 10 }}>
+              <div>
+                <label style={{ fontSize: "0.74rem", color: "var(--text-muted)", marginBottom: 4, display: "flex", alignItems: "center", gap: 4 }}>
+                  <Tag size={11} color="var(--accent)" />
+                  <span>{t.codeName || "Кодова назва"}</span>
+                </label>
+                <input
+                  type="text"
+                  value={track.codeName || ""}
+                  placeholder={t.codeNamePlaceholder || "Напр. DEMO_V2, ACID_DROP..."}
+                  onChange={(e) => onUpdateTrack({ ...track, codeName: e.target.value })}
+                  className="input"
+                  style={{ fontWeight: 600 }}
+                />
+              </div>
+
               <div>
                 <label style={{ fontSize: "0.74rem", color: "var(--text-muted)", marginBottom: 4, display: "block" }}>
                   {t.bpm}
