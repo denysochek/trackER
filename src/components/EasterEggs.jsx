@@ -2,11 +2,28 @@ import React, { useEffect } from 'react';
 import { playLvivBoom, playSixSevenPop } from '../utils/soundEffects';
 
 const LVIV_RAPPERS = [
-  { name: 'Гоня', sub: 'Глава 94', border: '#6366f1', text: '#e0e7ff' },
-  { name: 'Ціна Ритму', sub: 'Західний Кач', border: '#a855f7', text: '#fae8ff' },
-  { name: 'Довгий Пес', sub: 'Kickit Records / 032', border: '#f59e0b', text: '#fef3c7' },
+  // User Requested Full Lviv Hip-Hop All-Stars
+  { name: 'Clonnex', sub: 'Cyber-Trap / 032', border: '#ec4899', text: '#fdf2f8' },
+  { name: '032nimble', sub: '032 Sound', border: '#06b6d4', text: '#cffafe' },
+  { name: 'G Grizzie', sub: 'Львівський Вайб', border: '#f59e0b', text: '#fef3c7' },
+  { name: 'OTOY', sub: 'Околофронт', border: '#ef4444', text: '#fee2e2' },
   { name: 'Паліндром', sub: 'Стіни Мають Вуха', border: '#10b981', text: '#d1fae5' },
-  { name: 'Джонні Дивний', sub: 'Ціна Ритму', border: '#ec4899', text: '#fdf2f8' },
+  { name: 'Гоня', sub: 'Глава 94', border: '#6366f1', text: '#e0e7ff' },
+  { name: 'Рома Майк', sub: 'Майк', border: '#10b981', text: '#d1fae5' },
+  { name: 'Довгий Пес', sub: 'Kickit Records / 032', border: '#f59e0b', text: '#fef3c7' },
+  { name: 'Джонні Дивний', sub: 'Ціна Ритму', border: '#c026d3', text: '#fdf4ff' },
+  { name: 'Стук', sub: 'Underground Lemberg', border: '#8b5cf6', text: '#ede9fe' },
+  { name: 'Білий Бо', sub: '032 Flow', border: '#3b82f6', text: '#dbeafe' },
+  { name: 'Шершень', sub: 'Шершень / 032', border: '#eab308', text: '#fef9c3' },
+  { name: 'Levyy MC', sub: 'Місто Лева', border: '#f97316', text: '#ffedd5' },
+  { name: 'ХАС', sub: 'ХАС / R&B Trap', border: '#ef4444', text: '#fee2e2' },
+  { name: 'VovaZIL\'Vova', sub: 'Вова зі Львова / Легенда', border: '#14b8a6', text: '#ccfbf1' },
+  { name: 'Zombo', sub: 'Zombo Records', border: '#6366f1', text: '#e0e7ff' },
+  { name: 'Апатія (Apatia)', sub: 'Sad Wave', border: '#a855f7', text: '#f3e8ff' },
+  { name: 'Сонніум (Sonnium)', sub: 'Sonnium Beat', border: '#0ea5e9', text: '#e0f2fe' },
+  { name: 'Xarakter', sub: 'Характер', border: '#84cc16', text: '#f7fee7' },
+  { name: 'Глава 94', sub: 'Культ / Гоня & Степан', border: '#f43f5e', text: '#ffe4e6' },
+  { name: 'Ціна Ритму', sub: 'Західний Кач', border: '#a855f7', text: '#fae8ff' },
   { name: 'Аппекс', sub: 'Сонний Львів / Kickit', border: '#eab308', text: '#fef9c3' },
   { name: 'Zbaraski', sub: 'Божественний Вайб', border: '#3b82f6', text: '#dbeafe' },
   { name: 'Polamav', sub: 'Качає Тіло', border: '#f43f5e', text: '#ffe4e6' },
@@ -14,7 +31,6 @@ const LVIV_RAPPERS = [
   { name: 'PVNCH', sub: 'Північ / Захід', border: '#94a3b8', text: '#f8fafc' },
   { name: 'Joint Люстра', sub: 'Львівський Фанк', border: '#eab308', text: '#fef08a' },
   { name: 'Кашляючий Ед', sub: 'Перекладний Кашель', border: '#818cf8', text: '#e0e7ff' },
-  { name: 'OTOY', sub: 'Околофронт', border: '#ef4444', text: '#fee2e2' },
   { name: 'Свій Формат', sub: 'Oldschool Lemberg', border: '#14b8a6', text: '#ccfbf1' },
   { name: 'Kickit Records', sub: 'Lviv Hip-Hop Hub', border: '#c084fc', text: '#f5f3ff' },
   { name: '032 UA', sub: 'Місто Лева на Бітах', border: '#06b6d4', text: '#cffafe' }
@@ -45,11 +61,10 @@ export function EasterEggsOverlay({
   useEffect(() => {
     if (activeEgg === '32') {
       playLvivBoom();
-      // Keep open long enough for all rappers to float slowly
-      // Keep open long enough for all 16 rappers to complete full vertical float without cut
+      // Keep open long enough for all 31 rappers to float past top of screen smoothly
       const timer = setTimeout(() => {
         onClose();
-      }, 11800);
+      }, 14500);
       return () => clearTimeout(timer);
     }
 
@@ -91,9 +106,13 @@ export function EasterEggsOverlay({
         <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 250, overflow: 'hidden' }}>
           {LVIV_RAPPERS.map((r, i) => {
             // Center-concentrated X offsets (between -140px and +140px from screen center)
-            const offsets = [-110, 90, -50, 130, -130, 40, -80, 110, -20, 80, -100, 60, -70, 120, -40, 70];
+            const offsets = [
+              -120, 110, -60, 130, -130, 50, -90, 120, -40, 90, 
+              -110, 60, -80, 140, -50, 70, -100, 100, -70, 120,
+              -40, 80, -130, 60, -90, 110, -50, 90, -110, 70, -60
+            ];
             const xOffset = offsets[i % offsets.length];
-            const delay = (i * 0.28).toFixed(2);
+            const delay = (i * 0.22).toFixed(2);
             const duration = (6.4 + (i % 3) * 0.4).toFixed(2);
             const rotStart = `${((i % 4) - 1.5) * 6}deg`;
             const rotEnd = `${((i % 5) - 2) * 8}deg`;
