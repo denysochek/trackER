@@ -315,6 +315,52 @@ export default function App() {
     } catch (e) {}
   };
 
+  // Grand Continuous Fireworks display when an album hits 100% completion!
+  const triggerAlbumCompleteFireworks = () => {
+    try {
+      const duration = 4.5 * 1000;
+      const animationEnd = Date.now() + duration;
+      const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 1000 };
+
+      function randomInRange(min, max) {
+        return Math.random() * (max - min) + min;
+      }
+
+      // Initial center explosion
+      confetti({
+        particleCount: 120,
+        spread: 100,
+        origin: { y: 0.5 },
+        colors: ['#0071E3', '#34C759', '#FF9500', '#AF52DE', '#FF2D55', '#FFD60A']
+      });
+
+      const interval = setInterval(function() {
+        const timeLeft = animationEnd - Date.now();
+
+        if (timeLeft <= 0) {
+          return clearInterval(interval);
+        }
+
+        const particleCount = 60 * (timeLeft / duration);
+        // Multi-point fireworks launching from random locations on both sides
+        confetti({
+          ...defaults,
+          particleCount,
+          origin: { x: randomInRange(0.1, 0.35), y: Math.random() - 0.2 },
+          colors: ['#0071E3', '#34C759', '#FFD60A', '#FF2D55', '#00F0FF']
+        });
+        confetti({
+          ...defaults,
+          particleCount,
+          origin: { x: randomInRange(0.65, 0.9), y: Math.random() - 0.2 },
+          colors: ['#FF9500', '#AF52DE', '#34C759', '#FF375F', '#5E5CE6']
+        });
+      }, 250);
+    } catch (e) {
+      console.error('Fireworks error:', e);
+    }
+  };
+
   // Vinyl eject & roll physics trigger after 50 scratches
   const handleVinylEject = () => {
     setIsVinylEjected(true);
@@ -395,7 +441,13 @@ export default function App() {
   };
 
   const handleUpdateTrack = (updatedTrack) => {
+    const prevProgress = calculateAlbumProgress(tracks);
     const updatedTracks = tracks.map(tr => tr.id === updatedTrack.id ? updatedTrack : tr);
+    const newProgress = calculateAlbumProgress(updatedTracks);
+
+    if (newProgress === 100 && prevProgress < 100) {
+      triggerAlbumCompleteFireworks();
+    }
     handleSaveAlbum({ ...currentAlbum, tracks: updatedTracks });
   };
 
