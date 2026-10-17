@@ -11,7 +11,8 @@ import {
   Sparkles, 
   Check,
   Hash,
-  Tag
+  Tag,
+  Users
 } from "lucide-react";
 import { STAGES, calculateTrackScore, getTrackMaxScore, isTrackFinished } from "../constants";
 import { playStudioClick } from "../utils/soundEffects";
@@ -64,6 +65,13 @@ export function TrackCard({
     if (pts >= 4) return "var(--stage-beat)";
     if (pts >= 1) return "var(--color-warning)";
     return "var(--text-muted)";
+  };
+
+  const handleToggleTag = (tagId) => {
+    const currentTags = Array.isArray(track.tags) ? track.tags : [];
+    const exists = currentTags.includes(tagId);
+    const newTags = exists ? currentTags.filter(t => t !== tagId) : [...currentTags, tagId];
+    onUpdateTrack({ ...track, tags: newTags });
   };
 
   const scoreColor = getScoreColor(score);
@@ -166,6 +174,21 @@ export function TrackCard({
                   {track.title}
                 </span>
 
+                {track.feat && (
+                  <span
+                    onClick={() => setIsExpanded(true)}
+                    style={{
+                      fontSize: "0.82rem",
+                      fontWeight: 600,
+                      color: "var(--accent)",
+                      cursor: "pointer"
+                    }}
+                    title="Featuring artist"
+                  >
+                    (feat. {track.feat})
+                  </span>
+                )}
+
                 {finished && (
                   <span className="pill pill-success" style={{ fontSize: "0.68rem", padding: "1px 6px" }}>
                     <Sparkles size={10} />
@@ -179,6 +202,30 @@ export function TrackCard({
                     {track.type === 'instrumental' ? '🎹 INST' : '🎤 SKIT'}
                   </span>
                 )}
+
+                {/* Tags Badges (intro, outro, speech, instrumental) */}
+                {Array.isArray(track.tags) && track.tags.map(tagId => (
+                  <span
+                    key={tagId}
+                    className="pill"
+                    style={{
+                      fontSize: "0.63rem",
+                      padding: "1px 6px",
+                      fontWeight: 600,
+                      textTransform: "uppercase",
+                      background: tagId === 'intro' ? 'rgba(0, 113, 227, 0.12)' 
+                        : tagId === 'outro' ? 'rgba(175, 82, 222, 0.12)' 
+                        : tagId === 'speech' ? 'rgba(255, 149, 0, 0.12)' 
+                        : 'rgba(52, 199, 89, 0.12)',
+                      color: tagId === 'intro' ? 'var(--accent)' 
+                        : tagId === 'outro' ? '#af52de' 
+                        : tagId === 'speech' ? '#ff9500' 
+                        : '#34c759'
+                    }}
+                  >
+                    {tagId}
+                  </span>
+                ))}
               </div>
             )}
 
@@ -517,7 +564,20 @@ export function TrackCard({
           gap: 14
         }}>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr 1fr", gap: 10 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1.2fr 1fr 1fr", gap: 10 }}>
+              <div>
+                <label style={{ fontSize: "0.74rem", color: "var(--text-muted)", marginBottom: 4, display: "flex", alignItems: "center", gap: 4 }}>
+                  <Users size={11} color="var(--stage-vocal)" />
+                  <span>{t.featLabel || "Фіт (feat.)"}</span>
+                </label>
+                <input
+                  type="text"
+                  value={track.feat || ""}
+                  placeholder={t.featPlaceholder || "Напр. LUNA, Гоня..."}
+                  onChange={(e) => onUpdateTrack({ ...track, feat: e.target.value })}
+                  className="input"
+                />
+              </div>
               <div>
                 <label style={{ fontSize: "0.74rem", color: "var(--text-muted)", marginBottom: 4, display: "flex", alignItems: "center", gap: 4 }}>
                   <Tag size={11} color="var(--accent)" />

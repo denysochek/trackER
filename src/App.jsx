@@ -17,7 +17,7 @@ import {
 import { translations } from './translations';
 import { INITIAL_ALBUMS, calculateTrackScore, calculateAlbumProgress, DEMO_ALBUM_EN, DEMO_ALBUM_UK } from './constants';
 import { useLocalStorage } from './hooks/useLocalStorage';
-import { encryptData, decryptData } from './utils/crypto';
+import { encryptData, decryptData, exportKeyToBase64, importKeyFromBase64 } from './utils/crypto';
 import { playVinylSnap, playDiscRoll } from './utils/soundEffects';
 
 import { Header } from './components/Header';
@@ -42,14 +42,30 @@ export default function App() {
   const [accent, setAccent] = useLocalStorage('tracker_accent', 'indigo');
 
   // Auth & Encryption state
-  const [currentUser, setCurrentUser] = useState(() => {
-    try {
-      const saved = localStorage.getItem('tracker_user_session');
-      return saved ? JSON.parse(saved) : null;
-    } catch (e) {
-      return null;
-    }
-  });
+  const [currentUser, setCurrentUser] = useState(null);
+
+  // Restore session including re-importing AES-GCM CryptoKey from rawKeyBase64
+  useEffect(() => {
+    const restoreSession = async () => {
+      try {
+        const saved = localStorage.getItem('tracker_user_session');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed && parsed.rawKeyBase64) {
+            const encryptionKey = await importKeyFromBase64(parsed.rawKeyBase64);
+            setCurrentUser({
+              ...parsed,
+              encryptionKey
+            });
+            return;
+          }
+        }
+      } catch (err) {
+        console.error('Session restore failed:', err);
+      }
+    };
+    restoreSession();
+  }, []);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
   // Albums state
@@ -283,11 +299,22 @@ export default function App() {
     });
   }, [lang]);
 
-  const handleLoginSuccess = (userSession, rememberMe = true) => {
+  const handleLoginSuccess = async (userSession, rememberMe = true) => {
     setCurrentUser(userSession);
     if (rememberMe) {
       try {
-        localStorage.setItem('tracker_user_session', JSON.stringify(userSession));
+        let rawKeyBase64 = null;
+        if (userSession.encryptionKey) {
+          rawKeyBase64 = await exportKeyToBase64(userSession.encryptionKey);
+        }
+        const sessionToStore = {
+          username: userSession.username,
+          artistName: userSession.artistName,
+          salt: userSession.salt,
+          isAdmin: userSession.isAdmin,
+          rawKeyBase64
+        };
+        localStorage.setItem('tracker_user_session', JSON.stringify(sessionToStore));
       } catch (e) {
         console.error('Failed to save session:', e);
       }
@@ -501,10 +528,12 @@ export default function App() {
     if (q) {
       const matchTitle = tr.title.toLowerCase().includes(q);
       const matchCodeName = tr.codeName && tr.codeName.toLowerCase().includes(q);
+      const matchFeat = tr.feat && tr.feat.toLowerCase().includes(q);
       const matchKey = tr.key && tr.key.toLowerCase().includes(q);
       const matchBpm = tr.bpm && String(tr.bpm).includes(q);
       const matchNotes = tr.notes && tr.notes.toLowerCase().includes(q);
-      if (!matchTitle && !matchCodeName && !matchKey && !matchBpm && !matchNotes) return false;
+      const matchTags = Array.isArray(tr.tags) && tr.tags.some(tg => tg.toLowerCase().includes(q));
+      if (!matchTitle && !matchCodeName && !matchFeat && !matchKey && !matchBpm && !matchNotes && !matchTags) return false;
     }
 
     const s = tr.steps || {};

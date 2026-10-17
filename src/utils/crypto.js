@@ -88,7 +88,7 @@ export async function deriveEncryptionKey(password, saltHex) {
     },
     passwordKey,
     { name: 'AES-GCM', length: 256 },
-    false,
+    true,
     ['encrypt', 'decrypt']
   );
 }
@@ -146,4 +146,23 @@ export async function decryptData(encryptedBase64, cryptoKey) {
   const decoder = new TextDecoder();
   const jsonString = decoder.decode(decryptedBuffer);
   return JSON.parse(jsonString);
+}
+// Export AES-GCM CryptoKey to base64 raw string for session persistence
+export async function exportKeyToBase64(cryptoKey) {
+  if (!cryptoKey) return null;
+  const exported = await window.crypto.subtle.exportKey('raw', cryptoKey);
+  return arrayBufferToBase64(exported);
+}
+
+// Import base64 raw string back into AES-GCM CryptoKey
+export async function importKeyFromBase64(base64Key) {
+  if (!base64Key) return null;
+  const rawBuffer = base64ToArrayBuffer(base64Key);
+  return await window.crypto.subtle.importKey(
+    'raw',
+    rawBuffer,
+    { name: 'AES-GCM' },
+    true,
+    ['encrypt', 'decrypt']
+  );
 }
