@@ -42,7 +42,14 @@ export default function App() {
   const [accent, setAccent] = useLocalStorage('tracker_accent', 'indigo');
 
   // Auth & Encryption state
-  const [currentUser, setCurrentUser] = useState(null);
+  const [currentUser, setCurrentUser] = useState(() => {
+    try {
+      const saved = localStorage.getItem('tracker_user_session');
+      return saved ? JSON.parse(saved) : null;
+    } catch (e) {
+      return null;
+    }
+  });
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
   // Albums state
@@ -110,16 +117,21 @@ export default function App() {
           try {
             const decryptedAlbums = await decryptData(encryptedData, currentUser.encryptionKey);
             if (Array.isArray(decryptedAlbums) && decryptedAlbums.length > 0) {
-              setAlbums(decryptedAlbums);
-              setCurrentAlbumId(decryptedAlbums[0].id);
-              return;
+              // Ensure demo album is excluded from user's encrypted vault
+              const userAlbums = decryptedAlbums.filter(a => a.id !== 'album-neon-noir');
+              if (userAlbums.length > 0) {
+                setAlbums(userAlbums);
+                setCurrentAlbumId(userAlbums[0].id);
+                return;
+              }
             }
           } catch (e) {
             console.error('Decryption failed:', e);
           }
         }
-        setAlbums(INITIAL_ALBUMS);
-        setCurrentAlbumId(INITIAL_ALBUMS[0].id);
+        // New user has an empty initial albums list (demo album is not in their profile)
+        setAlbums([]);
+        setCurrentAlbumId(null);
       } else {
         const savedGuest = localStorage.getItem('tracker_guest_albums');
         if (savedGuest) {
@@ -271,16 +283,26 @@ export default function App() {
     });
   }, [lang]);
 
-  const handleLoginSuccess = (userSession) => {
+  const handleLoginSuccess = (userSession, rememberMe = true) => {
     setCurrentUser(userSession);
+    if (rememberMe) {
+      try {
+        localStorage.setItem('tracker_user_session', JSON.stringify(userSession));
+      } catch (e) {
+        console.error('Failed to save session:', e);
+      }
+    } else {
+      localStorage.removeItem('tracker_user_session');
+    }
     triggerConfetti();
   };
 
   const handleSignOut = () => {
     setCurrentUser(null);
+    localStorage.removeItem('tracker_user_session');
   };
 
-  const currentAlbum = albums.find(a => a.id === currentAlbumId) || albums[0] || INITIAL_ALBUMS[0];
+  const currentAlbum = albums.find(a => a.id === currentAlbumId) || albums[0] || (!currentUser ? INITIAL_ALBUMS[0] : null);
   const tracks = currentAlbum ? (currentAlbum.tracks || []) : [];
 
   const triggerConfetti = () => {
@@ -529,6 +551,36 @@ export default function App() {
           </div>
         )}
 
+        {!currentAlbum ? (
+          <div style={{
+            textAlign: "center",
+            padding: "80px 24px",
+            background: "var(--bg-card)",
+            border: "1px solid var(--border-medium)",
+            borderRadius: "var(--radius-xl)",
+            boxShadow: "var(--shadow-sm)",
+            margin: "20px 0"
+          }}>
+            <Disc3 size={52} color="var(--accent)" style={{ margin: "0 auto 16px", opacity: 0.8 }} />
+            <h2 style={{ fontSize: "1.4rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: 8 }}>
+              {t.noAlbumsInProfile || "У вашому профілі ще немає створених альбомів"}
+            </h2>
+            <p style={{ color: "var(--text-secondary)", fontSize: "0.92rem", marginBottom: 24, maxWidth: 460, margin: "0 auto 24px" }}>
+              {t.noAlbumsPrompt || "Створіть свій перший реліз або відкрийте домашню сторінку студії для перегляду проєктів."}
+            </p>
+            <div style={{ display: "flex", justifyContent: "center", gap: 12 }}>
+              <button
+                onClick={() => setIsNewAlbumModalOpen(true)}
+                className="btn btn-primary"
+                style={{ padding: "10px 22px" }}
+              >
+                <Plus size={16} />
+                <span>{t.newAlbum}</span>
+              </button>
+            </div>
+          </div>
+        ) : (
+          <>
         {/* Album Overview Hero */}
         <AlbumHero
           album={currentAlbum}
@@ -539,6 +591,51 @@ export default function App() {
           onOpenShareModal={() => setIsShareModalOpen(true)}
           onTriggerEgg={(egg) => setActiveEgg(egg)}
         />
+
+        {/* Notes & Concept Field directly underneath Album */}
+        {currentAlbum && !currentAlbum.isLocked && (
+        <div style={{
+          marginTop: -8,
+          marginBottom: 24,
+          background: "var(--bg-card)",
+          border: "1px solid var(--border-medium)",
+          borderRadius: "var(--radius-xl)",
+          padding: "18px 22px",
+          boxShadow: "var(--shadow-sm)"
+        }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <FileEdit size={16} color="var(--accent)" />
+              <strong style={{ fontSize: "0.92rem", color: "var(--text-primary)" }}>
+                {t.albumNotesTitle || "Концепція та нотатки альбому"}
+              </strong>
+            </div>
+            <span style={{ fontSize: "0.74rem", color: "var(--text-muted)" }}>
+              {t.changesSaved || "Зберігається автоматично"}
+            </span>
+          </div>
+
+          <textarea
+            value={currentAlbum.concept || ""}
+            onChange={(e) => handleSaveAlbum({ ...currentAlbum, concept: e.target.value })}
+            placeholder={t.addNotesPlaceholder || "Записуйте сюди концепцію альбому, ідеї, текст, референси чи технічні деталі зведення..."}
+            className="textarea"
+            style={{
+              width: "100%",
+              minHeight: 88,
+              fontSize: "0.86rem",
+              lineHeight: 1.5,
+              background: "var(--bg-card-secondary)",
+              border: "1px solid var(--border-subtle)",
+              borderRadius: "var(--radius-md)",
+              padding: "10px 14px",
+              resize: "vertical",
+              color: "var(--text-primary)",
+              fontFamily: "inherit"
+            }}
+          />
+        </div>
+        )}
 
         {/* If album is locked by Master Key */}
         {currentAlbum.isLocked ? (
@@ -714,53 +811,13 @@ export default function App() {
             )}
           </>
         )}
-          </>
-        )}
 
         
-        {/* Always-Available Bottom Album Notes & Concept Field */}
-        {currentAlbum && !currentAlbum.isLocked && (
-        <div style={{
-          marginTop: 28,
-          marginBottom: 16,
-          background: "var(--bg-card)",
-          border: "1px solid var(--border-medium)",
-          borderRadius: "var(--radius-xl)",
-          padding: "20px 24px",
-          boxShadow: "var(--shadow-sm)"
-        }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <FileEdit size={16} color="var(--accent)" />
-              <strong style={{ fontSize: "0.95rem", color: "var(--text-primary)" }}>
-                {t.albumNotesTitle || "Концепція та нотатки альбому"}
-              </strong>
-            </div>
-            <span style={{ fontSize: "0.74rem", color: "var(--text-muted)" }}>
-              {t.changesSaved || "Зберігається автоматично"}
-            </span>
-          </div>
 
-          <textarea
-            value={currentAlbum.concept || ""}
-            onChange={(e) => handleSaveAlbum({ ...currentAlbum, concept: e.target.value })}
-            placeholder={t.addNotesPlaceholder || "Записуйте сюди концепцію альбому, ідеї, текст, референси чи технічні деталі зведення..."}
-            className="textarea"
-            style={{
-              width: "100%",
-              minHeight: 110,
-              fontSize: "0.88rem",
-              lineHeight: 1.55,
-              background: "var(--bg-card-secondary)",
-              border: "1px solid var(--border-subtle)",
-              borderRadius: "var(--radius-md)",
-              padding: "12px 14px",
-              resize: "vertical",
-              color: "var(--text-primary)",
-              fontFamily: "inherit"
-            }}
-          />
-        </div>
+
+          </>
+        )}
+          </>
         )}
 
         {/* Footer with credit, compact restored disc button, and hidden big board button */}

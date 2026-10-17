@@ -1408,3 +1408,59 @@ h1, h2, h3, h4, .font-display {
     page-break-inside: avoid !important;
   }
 }
+
+/* ==========================================================================
+   Smooth Premium Micro-interactions & Zero-Jitter Polish
+   ========================================================================== */
+
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Ensure GPU acceleration for animated interactive cards without layout shifting */
+.glass-panel,
+.card,
+.album-card-hover {
+  will-change: transform, box-shadow;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+}
+
+.album-card-hover {
+  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), 
+              box-shadow 0.28s cubic-bezier(0.16, 1, 0.3, 1), 
+              border-color 0.2s ease !important;
+}
+
+.album-card-hover:hover {
+  transform: translateY(-3px) scale(1.008);
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.25);
+  border-color: var(--accent);
+}
+
+/* Smooth step button click without jumping */
+.step-button {
+  transition: background-color 0.18s ease, 
+              border-color 0.18s ease, 
+              color 0.18s ease, 
+              transform 0.14s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.step-button:active {
+  transform: scale(0.96);
+}
+
+/* Smooth track card hover */
+.glass-panel:hover {
+  border-color: var(--border-medium);
+}
+
+/* Polished Checkbox animation */
+input[type="checkbox"] {
+  transition: transform 0.15s cubic-bezier(0.2, 0, 0, 1), accent-color 0.2s ease;
+}
+
+input[type="checkbox"]:active {
+  transform: scale(0.88);
+}

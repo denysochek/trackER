@@ -25,6 +25,7 @@ export function AuthModal({
   const [artistName, setArtistName] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -87,7 +88,7 @@ export function AuthModal({
         salt: userRecord.salt,
         encryptionKey,
         isAdmin
-      });
+      }, rememberMe);
 
       resetForm();
       onClose();
@@ -166,7 +167,7 @@ export function AuthModal({
         salt,
         encryptionKey,
         isAdmin
-      });
+      }, rememberMe);
 
       resetForm();
       onClose();
@@ -178,24 +179,7 @@ export function AuthModal({
     }
   };
 
-  const handleWipeAllAccounts = () => {
-    if (window.confirm(t.wipeAccountsConfirm || "Ви дійсно хочете видалити всі зареєстровані акаунти? Усі старі профілі буде очищено.")) {
-      try {
-        localStorage.removeItem("tracker_users_registry");
-        Object.keys(localStorage).forEach(key => {
-          if (key.startsWith("tracker_vault_")) {
-            localStorage.removeItem(key);
-          }
-        });
-        localStorage.removeItem("tracker_user_session");
-        resetForm();
-        setTab("signup");
-        setSuccessMessage(t.wipeAccountsSuccess || "Всі акаунти успішно видалено! Тепер ви можете створити новий акаунт.");
-      } catch (err) {
-        console.error(err);
-      }
-    }
-  };
+
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -355,6 +339,33 @@ export function AuthModal({
             </div>
           )}
 
+          {/* Remember Me Checkbox */}
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 4 }}>
+            <input
+              type="checkbox"
+              id="rememberMeCheck"
+              checked={rememberMe}
+              onChange={(e) => setRememberMe(e.target.checked)}
+              style={{
+                width: 16,
+                height: 16,
+                accentColor: "var(--accent)",
+                cursor: "pointer"
+              }}
+            />
+            <label
+              htmlFor="rememberMeCheck"
+              style={{
+                fontSize: "0.82rem",
+                color: "var(--text-secondary)",
+                cursor: "pointer",
+                userSelect: "none"
+              }}
+            >
+              {t.rememberMe || "Запам'ятати мене"}
+            </label>
+          </div>
+
           {errorMessage && (
             <div style={{
               background: "var(--color-danger-bg)",
@@ -378,7 +389,7 @@ export function AuthModal({
             <ArrowRight size={14} />
           </button>
 
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 4 }}>
+          <div style={{ display: "flex", justifyContent: "center", alignItems: "center", marginTop: 4 }}>
             <button
               type="button"
               onClick={onClose}
@@ -386,17 +397,6 @@ export function AuthModal({
               style={{ fontSize: "0.75rem" }}
             >
               {t.guestMode}
-            </button>
-
-            <button
-              type="button"
-              onClick={handleWipeAllAccounts}
-              className="btn btn-ghost btn-sm"
-              style={{ fontSize: "0.75rem", color: "var(--color-danger)", display: "flex", alignItems: "center", gap: 4 }}
-              title="Видалити всі старі акаунти та почати з чистого аркуша"
-            >
-              <Trash2 size={12} />
-              <span>{t.wipeAccounts || "Видалити всі акаунти"}</span>
             </button>
           </div>
         </form>
