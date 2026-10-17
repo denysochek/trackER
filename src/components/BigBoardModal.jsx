@@ -18,7 +18,6 @@ import { playStudioClick } from '../utils/soundEffects';
 export function BigBoardModal({
   isOpen,
   onClose,
-  currentUser,
   t
 }) {
   if (!isOpen) return null;
@@ -74,13 +73,6 @@ export function BigBoardModal({
   const [selectedEntryId, setSelectedEntryId] = useState(null); // id of entry showing metadata on click
   const [isCopied, setIsCopied] = useState(false);
 
-  // Check if current user is admin
-  const isAdmin = currentUser && (
-    currentUser.username === 'dionisii' ||
-    currentUser.username.toLowerCase() === 'admin' ||
-    currentUser.isAdmin === true
-  );
-
   // Persist private canvas
   useEffect(() => {
     localStorage.setItem('tracker_big_board_canvas', canvasText);
@@ -122,14 +114,13 @@ export function BigBoardModal({
 
   const handleAddPublicEntry = (e) => {
     e?.preventDefault();
-    if (!currentUser) return;
     if (!newEntryText.trim()) return;
 
     playStudioClick();
     const entry = {
       id: `pub-${Date.now()}`,
       text: newEntryText.trim(),
-      author: currentUser.username,
+      author: 'Артист',
       isAnonymous: !!isAnonymous,
       createdAt: new Date().toLocaleString([], { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
     };
@@ -433,8 +424,7 @@ export function BigBoardModal({
                 background: '#f8f8f7',
                 borderBottom: '2px solid #222222'
               }}>
-                {currentUser ? (
-                  <form onSubmit={handleAddPublicEntry} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <form onSubmit={handleAddPublicEntry} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                     <div style={{ display: 'flex', gap: 10 }}>
                       <input
                         type="text"
@@ -483,21 +473,6 @@ export function BigBoardModal({
                       </label>
                     </div>
                   </form>
-                ) : (
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 10,
-                    padding: '10px 16px',
-                    background: '#eeeeed',
-                    borderRadius: '10px',
-                    color: '#444444',
-                    fontSize: '0.85rem'
-                  }}>
-                    <Lock size={16} />
-                    <span>{t.onlyRegisteredCanPost || 'Писати на загальній дошці можуть тільки зареєстровані користувачі.'}</span>
-                  </div>
-                )}
               </div>
 
               {/* Public Entries Feed: By default shows ONLY clean text */}
@@ -509,7 +484,7 @@ export function BigBoardModal({
                 ) : (
                   publicEntries.map(entry => {
                     const isSelected = selectedEntryId === entry.id;
-                    const canDelete = isAdmin || (currentUser && currentUser.username === entry.author);
+                    const canDelete = true;
 
                     return (
                       <div
@@ -566,15 +541,7 @@ export function BigBoardModal({
                                 </span>
                               ) : (
                                 <span>
-                                  {isAdmin ? (
-                                    <strong style={{ color: '#dc2626' }}>
-                                      🕵️ Адмін-доступ (Анонім: {entry.author})
-                                    </strong>
-                                  ) : (
-                                    <span style={{ fontStyle: 'italic', color: '#888888' }}>
-                                      (Анонімний запис)
-                                    </span>
-                                  )}
+                                  <span style={{ fontStyle: 'italic', color: '#888888' }}>(Анонімний запис)</span>
                                 </span>
                               )}
                             </div>
@@ -609,9 +576,7 @@ export function BigBoardModal({
                                     fontWeight: 700
                                   }}
                                   title="Видалити цей запис"
-                                >
-                                  {isAdmin && entry.author !== currentUser?.username ? 'Видалити (Адмін)' : 'Видалити'}
-                                </button>
+                                >Видалити</button>
                               )}
                             </div>
                           </div>

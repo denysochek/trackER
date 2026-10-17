@@ -12,7 +12,6 @@ import {
   Key,
   Home
 } from 'lucide-react';
-import { UserMenu } from './UserMenu';
 import { playVinylScratch, playVinylFlyOff, playRollingSound } from '../utils/soundEffects';
 
 export function Header({
@@ -26,9 +25,6 @@ export function Header({
   albums,
   currentAlbumId,
   setCurrentAlbumId,
-  currentUser,
-  onOpenAuth,
-  onSignOut,
   onOpenNewAlbumModal,
   onOpenStudioSheet,
   onOpenExportImport,
@@ -275,9 +271,7 @@ export function Header({
                 <span style={{ fontSize: '1.18rem', fontWeight: 700, letterSpacing: '-0.02em', color: 'var(--text-primary)' }}>
                   track<span style={{ color: 'var(--accent)' }}>ER</span>
                 </span>
-                <span className="pill" style={{ fontSize: '0.65rem', padding: '1px 7px', textTransform: 'lowercase', fontWeight: 600 }}>
-                  {currentUser ? (currentUser.username || currentUser.artistName) : 'guest'}
-                </span>
+                <span className="pill" style={{ fontSize: '0.65rem', padding: '1px 7px', textTransform: 'uppercase', fontWeight: 700 }}>STUDIO</span>
               </div>
             </div>
           </div>
@@ -524,14 +518,6 @@ export function Header({
           >
             <Download size={13} />
           </button>
-
-          {/* Encrypted User Account Menu */}
-          <UserMenu
-            currentUser={currentUser}
-            onOpenAuth={onOpenAuth}
-            onSignOut={onSignOut}
-            t={t}
-          />
 
         </div>
 

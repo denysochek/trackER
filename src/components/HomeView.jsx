@@ -17,7 +17,6 @@ export function HomeView({
   albums,
   onSelectAlbum,
   onOpenNewAlbumModal,
-  currentUser,
   t
 }) {
   // Aggregate stats across all albums
@@ -56,18 +55,14 @@ export function HomeView({
       }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-            <span className="pill" style={{ textTransform: 'uppercase', fontSize: '0.72rem' }}>
-              {currentUser ? `ПРОФІЛЬ: ${currentUser.username}` : 'ГОСЬТОВИЙ РЕЖИМ'}
-            </span>
+            <span className="pill" style={{ textTransform: "uppercase", fontSize: "0.72rem", fontWeight: 700 }}>СТУДІЯ</span>
             <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
               trackER Central Studio
             </span>
           </div>
 
-          <h1 style={{ fontSize: '2.1rem', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 10px', letterSpacing: '-0.03em' }}>
-            {currentUser 
-              ? `Привіт, ${currentUser.artistName || currentUser.username}! 🎧` 
-              : 'Головна студія продакшну 🎛️'}
+          <h1 style={{ fontSize: "2.1rem", fontWeight: 800, color: "var(--text-primary)", margin: "0 0 10px", letterSpacing: "-0.03em" }}>
+            Головна студія продакшну 🎛️
           </h1>
           
           <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.98rem', maxWidth: 600, lineHeight: 1.5 }}>
