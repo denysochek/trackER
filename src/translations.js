@@ -141,6 +141,20 @@ export const TRANSLATIONS = {
     creditsTitle: "Титри львівського репу (032)",
     closeCredits: "Закрити титри",
 
+    // Share Album
+    shareAlbum: "Поділитися",
+    shareAlbumTitle: "Поділитися альбомом",
+    shareLink: "Пряме посилання для відкриття",
+    copyShareLink: "Копіювати",
+    linkCopied: "Посилання скопійовано!",
+    shareLinkDesc: "Посилання містить увесь альбом і треки. Отримувач зможе відкрити та імпортувати його без реєстрації.",
+    shareMessenger: "Текстовий звіт для месенджерів",
+    copyMessengerSummary: "Скопіювати текст",
+    nativeShare: "Надіслати через систему (AirDrop, Telegram...)",
+    sharedAlbumDetected: "Виявлено спільний альбом!",
+    sharedAlbumImportPrompt: "Вам надіслали альбом. Бажаєте імпортувати його до своєї студії?",
+    importShared: "Імпортувати альбом",
+    importSharedSuccess: "Альбом успішно імпортовано!",
     filterInProgress: "В роботі",
 
     // Track Controls
@@ -350,6 +364,20 @@ export const TRANSLATIONS = {
     creditsTitle: "032 Lviv Hip-Hop End Credits",
     closeCredits: "Close Credits",
 
+    // Share Album
+    shareAlbum: "Share",
+    shareAlbumTitle: "Share Album Project",
+    shareLink: "Direct Share Link",
+    copyShareLink: "Copy Link",
+    linkCopied: "Link Copied!",
+    shareLinkDesc: "This link contains all tracks and production progress. The recipient can view and import it without registration.",
+    shareMessenger: "Messenger Summary (Telegram, Discord)",
+    copyMessengerSummary: "Copy Text",
+    nativeShare: "Share via System (AirDrop, Telegram...)",
+    sharedAlbumDetected: "Shared Album Detected!",
+    sharedAlbumImportPrompt: "An album project was shared with you. Would you like to import it into your studio?",
+    importShared: "Import Album",
+    importSharedSuccess: "Album imported successfully!",
     filterInProgress: "In Progress",
 
     // Track Controls

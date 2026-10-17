@@ -31,6 +31,7 @@ import { ExportImportModal } from './components/ExportImportModal';
 import { AudioPlayerBar } from './components/AudioPlayerBar';
 import { AuthModal } from './components/AuthModal';
 import { AlbumKeyModal } from './components/AlbumKeyModal';
+import { ShareAlbumModal } from './components/ShareAlbumModal';
 import { EasterEggsOverlay } from './components/EasterEggs';
 
 export default function App() {
@@ -70,6 +71,8 @@ export default function App() {
   const [isStudioSheetModalOpen, setIsStudioSheetModalOpen] = useState(false);
   const [isExportImportModalOpen, setIsExportImportModalOpen] = useState(false);
   const [isAlbumKeyModalOpen, setIsAlbumKeyModalOpen] = useState(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [sharedAlbumToImport, setSharedAlbumToImport] = useState(null);
 
   // One-time account wipe requested by user
   useEffect(() => {
@@ -151,6 +154,46 @@ export default function App() {
     } else {
       localStorage.setItem('tracker_guest_albums', JSON.stringify(newAlbums));
     }
+  };
+
+
+  // Handle Shared Album from URL hash (#share=...)
+  useEffect(() => {
+    const handleHash = () => {
+      const hash = window.location.hash;
+      if (hash && hash.startsWith("#share=")) {
+        try {
+          const raw = hash.replace("#share=", "");
+          const jsonStr = decodeURIComponent(escape(atob(decodeURIComponent(raw))));
+          const parsed = JSON.parse(jsonStr);
+          if (parsed && parsed.title && Array.isArray(parsed.tracks)) {
+            setSharedAlbumToImport(parsed);
+          }
+        } catch (e) {
+          console.error("Failed to parse shared album from URL hash:", e);
+        }
+      }
+    };
+
+    handleHash();
+    window.addEventListener("hashchange", handleHash);
+    return () => window.removeEventListener("hashchange", handleHash);
+  }, []);
+
+  const handleImportSharedAlbum = () => {
+    if (!sharedAlbumToImport) return;
+    const newId = "album-" + Date.now();
+    const newAlbum = {
+      ...sharedAlbumToImport,
+      id: newId
+    };
+    const updated = [newAlbum, ...albums];
+    persistAlbums(updated);
+    setCurrentAlbumId(newId);
+    setCurrentView("studio");
+    setSharedAlbumToImport(null);
+    window.location.hash = "";
+    triggerConfetti();
   };
 
   const handleLoginSuccess = (userSession) => {
@@ -351,6 +394,7 @@ export default function App() {
         onOpenStudioSheet={() => setIsStudioSheetModalOpen(true)}
         onOpenExportImport={() => setIsExportImportModalOpen(true)}
         onOpenAlbumKey={() => setIsAlbumKeyModalOpen(true)}
+          onOpenShareModal={() => setIsShareModalOpen(true)}
         isVinylEjected={isVinylEjected}
         onVinylEject={handleVinylEject}
         currentView={currentView}
@@ -708,6 +752,72 @@ export default function App() {
         currentUser={currentUser}
         t={t}
       />
+
+
+      {/* Share Album Modal */}
+      <ShareAlbumModal
+        isOpen={isShareModalOpen}
+        onClose={() => setIsShareModalOpen(false)}
+        album={currentAlbum}
+        t={t}
+      />
+
+      {/* Shared Album Notification Card */}
+      {sharedAlbumToImport && (
+        <div style={{
+          position: "fixed",
+          bottom: 24,
+          left: "50%",
+          transform: "translateX(-50%)",
+          zIndex: 250,
+          background: "var(--bg-card)",
+          border: "2px solid var(--accent)",
+          borderRadius: "var(--radius-lg)",
+          boxShadow: "var(--shadow-modal)",
+          padding: "14px 20px",
+          display: "flex",
+          alignItems: "center",
+          gap: 16,
+          maxWidth: 580,
+          width: "92%"
+        }}>
+          <div style={{
+            width: 40,
+            height: 40,
+            borderRadius: "50%",
+            background: "var(--accent-subtle)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            color: "var(--accent)",
+            flexShrink: 0
+          }}>
+            <Sparkles size={20} />
+          </div>
+          <div style={{ flex: 1 }}>
+            <strong style={{ fontSize: "0.9rem", color: "var(--text-primary)", display: "block" }}>
+              {t.sharedAlbumDetected || "Виявлено спільний альбом!"}
+            </strong>
+            <span style={{ fontSize: "0.78rem", color: "var(--text-secondary)" }}>
+              «{sharedAlbumToImport.title}» ({sharedAlbumToImport.artist || "N/A"}) • {sharedAlbumToImport.tracks?.length || 0} треків
+            </span>
+          </div>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button
+              onClick={() => { setSharedAlbumToImport(null); window.location.hash = ""; }}
+              className="btn btn-ghost btn-sm"
+            >
+              {t.cancel || "Скасувати"}
+            </button>
+            <button
+              onClick={handleImportSharedAlbum}
+              className="btn btn-primary btn-sm"
+            >
+              {t.importShared || "Імпортувати"}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Modals */}
       <AuthModal

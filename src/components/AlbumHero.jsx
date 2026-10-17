@@ -6,7 +6,8 @@ import {
   Music, 
   Sparkles, 
   FileEdit,
-  Disc
+  Disc,
+  Share2
 } from "lucide-react";
 import { calculateAlbumProgress, calculateStageBreakdown, calculateTrackScore } from "../constants";
 import { EasterNumberTrigger } from "./EasterEggs";
@@ -18,6 +19,7 @@ export function AlbumHero({
   onDeleteAlbum,
   onOpenConceptModal,
   onOpenAlbumKey,
+  onOpenShareModal,
   onTriggerEgg
 }) {
   if (!album) return null;
@@ -43,9 +45,12 @@ export function AlbumHero({
         <div style={{ display: "flex", gap: 24, alignItems: "flex-start", flexWrap: "wrap" }}>
           
           {/* Album Cover Sleeve with clean subtle shadow */}
-          <div style={{ position: "relative", width: 150, height: 150, flexShrink: 0 }}>
+          <div className="album-sleeve-container" style={{ position: "relative", width: 150, height: 150, flexShrink: 0 }}>
+            <div className="album-vinyl-disc" />
             <div
               style={{
+                position: "relative",
+                zIndex: 2,
                 width: 150,
                 height: 150,
                 borderRadius: "var(--radius-lg)",
@@ -118,6 +123,15 @@ export function AlbumHero({
                 <span>{t.editAlbum}</span>
               </button>
               
+              <button
+                onClick={onOpenShareModal}
+                className="btn btn-secondary btn-sm"
+                title={t.shareAlbum || "Поділитися альбомом"}
+              >
+                <Share2 size={13} color="var(--accent)" />
+                <span>{t.shareAlbum || "Поділитися"}</span>
+              </button>
+
               <button
                 onClick={onOpenConceptModal}
                 className="btn btn-secondary btn-sm"
@@ -221,7 +235,7 @@ export function AlbumHero({
           {/* Master Progress Bar */}
           <div className="progress-track" style={{ height: 8 }}>
             <div
-              className="progress-fill"
+              className="progress-fill shimmer"
               style={{
                 width: `${progressPercent}%`,
                 background: progressPercent === 100 ? "var(--color-success)" : "var(--accent)"

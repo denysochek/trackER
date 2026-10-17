@@ -1,68 +1,133 @@
 # trackER 🎛️
-### Minimalist Studio Album & Track Production System with Client-Side AES-256 Encryption
 
-trackER is a modern, minimalist web system—featuring an aesthetic inspired by Apple (SF Pro / macOS Clean UI) and Google’s clean design—tailored for musicians, producers, and sound engineers. It offers full end-to-end client-side encryption for projects, supports light and dark modes, and includes a detailed 10-point tracking system for individual tracks.
+> **Minimalist Studio Album & Track Production System with Client-Side AES-256 Encryption**
+
+[![Vite](https://img.shields.io/badge/Vite-6.x-646CFF?logo=vite&logoColor=white)](https://vitejs.dev/)
+[![React](https://img.shields.io/badge/React-18.x-61DAFB?logo=react&logoColor=black)](https://react.dev/)
+[![Security](https://img.shields.io/badge/Encryption-AES--256--GCM-22c55e?logo=lock&logoColor=white)](https://developer.mozilla.org/en-US/docs/Web/API/SubtleCrypto)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Offline](https://img.shields.io/badge/Offline--First-100%25-orange.svg)](#offline-first-architecture)
+
+**trackER** is a clean, modern web application designed for music producers, beatmakers, audio engineers, and indie artists to plan, track, and ship albums and EPs. Built with a sleek Apple-inspired aesthetic (macOS SF Pro style) and clean Google design language, trackER keeps studio sessions organized with zero distractions.
 
 ---
 
-🍏 1. Apple / Google Clean Visual Vibe
-Light & Dark Modes:
+## ✨ Key Features
 
-☀️ Light Mode (Apple Gray/White): Clean #F5F5F7 backdrop, icy crisp #FFFFFF cards, sleek rgba(0,0,0,0.07) borders, smooth depth, and zero eye strain when locked in for late-night sessions.
+### 🎚️ 1. Multi-Format Production Pipeline
+Track every stage of production with tailored point systems:
+- **Full Songs (10 Points)**:
+  - **Beatmaking (4 pts)**: Idea / Demo loop, Arrangement, Instrumental Mix, Mastering.
+  - **Vocals (4 pts)**: Lyrics writing, Guide vocal / Demo, Clean studio takes, Processing & Tuning.
+  - **Visuals & Promo (2 pts)**: Cover art concept / Spotify Canvas, Final master artwork.
+- **Instrumentals (5 Points)**:
+  - 3 points for Beatmaking (Demo, Arrangement, Mix & Master).
+  - 2 points for Visuals & Artwork (Vocals skipped automatically).
+- **Skits & Interludes (5 Points)**:
+  - 2 points for Sound Design & Beat arrangement.
+  - 3 points for Voice recording, Script / Dialogue, and Vocal FX.
 
-🌙 Dark Mode (Apple Obsidian/Charcoal): True black #000000, studio-ready #1C1C1E cards, and subtle rgba(255,255,255,0.09) borders for maximum stealth mode.
+### 🔐 2. Zero-Knowledge Client-Side Vault (AES-256-GCM)
+Your tracks, unreleased lyrics, and session notes never leave your browser unencrypted:
+- **Web Crypto API**: Industry-standard **AES-GCM (256-bit)** running natively in the client.
+- **PBKDF2 Key Derivation**: 100,000 iterations with SHA-256 and unique per-user cryptographic salts.
+- **No Plaintext Storage**: Data is encrypted before touching `localStorage`.
+- **Guest Mode**: Instant studio access without registration, with the ability to lock your project into an encrypted profile at any time.
 
-Instant theme toggle right in the header built like an Apple Segmented Control.
+### 🔗 3. Seamless Album Sharing
+Share your album progress with co-producers, managers, or fans in seconds:
+- **Direct Link Sharing**: Generates a self-contained URL with the album state encoded into the link hash. Anyone opening the link can view and import the album without an account.
+- **Messenger Summary**: One-click formatted progress report with visual emoji progress bars (`[████████░░]`), ready for Telegram, Discord, or WhatsApp.
+- **Native Share Sheet**: Integrated with the system share dialog (AirDrop, Messages, etc.) on supported desktop and mobile browsers.
 
-Typography: Crisp Apple system fonts (-apple-system, SF Pro Display, Inter, Google Sans).
+### 📄 4. Compact 1-Page B&W Studio Production Sheet
+- High-density, print-ready checklist designed specifically for studio control rooms.
+- Clean black-and-white layout optimized to fit completely on **a single A4 landscape sheet** with no awkward page breaks.
+- Export as PDF or copy raw Markdown directly to your clipboard.
 
-No-BS Design: Zero cheap neon distraction — strictly high-end studio tool aesthetic for real hitmakers.
+### 📋 5. Big Studio Board (Private & Public)
+- **Private Canvas**: Freeform plain-text workspace for lyrics, scratch rhymes, tempo automation notes, and mix feedback.
+- **Public Community Board**: Collaborative board for studio teams with optional anonymous posting and admin moderation capabilities.
 
-🔐 2. Locked-In Encrypted Vault (Zero-Knowledge AES-256-GCM)
-Web Crypto API: Your beats and unreleased heat stay strictly on your machine. All crypto magic runs right in the client browser.
+### 🎨 6. Material 3 Design & Color Accents
+- **Adaptive Dark / Light Themes**: High-contrast Apple Obsidian dark mode for late-night dim studio sessions, and clean crisp light mode for daylight.
+- **Harmonious M3 Color Accents**: Electric Indigo, Sage Green, Olive Branch, Terracotta Rust, Orchid Plum, Warm Ochre Gold, and Monochrome Neutral.
+- **Tactile Micro-Animations**: Smooth checkbox pop physics, interactive vinyl record sleeve preview, and progress bar shimmer.
 
-Key Derivation: Hardened with PBKDF2 (100,000 iterations, SHA-256) backed by a unique cryptographic Salt for every user profile.
+### 🌐 7. Complete Bilingual Interface
+- Full, native localization in both **English** and **Ukrainian (Українська)** with instant 1-click toggling.
 
-The Stash / Vault: Albums, track lists, bars/lyrics, BPMs, key scales, and confidential session notes are locked up tight with AES-256-GCM using a fresh Initialization Vector (IV) on every save.
+---
 
-Top-Tier Security: No plain-text passwords stored anywhere. Your raw files stay untouchable; the database only ever sees encrypted code.
+## 🛠️ Technology Stack
 
-Guest Cook Mode: Jump straight into the DAW/tracker without signing up, then lock it down into an encrypted profile whenever you're ready.
+| Layer | Technology |
+|---|---|
+| **Frontend Framework** | React 18 + Vite |
+| **Styling** | Vanilla CSS (CSS Custom Properties & Design Tokens) |
+| **Cryptography** | Web Crypto API (`SubtleCrypto`, AES-GCM, PBKDF2) |
+| **Audio Engine** | Web Audio API (Live demo previews & audio cues) |
+| **Icons** | Lucide React |
 
-🌐 3. Multi-Language Support (UK 🇺🇦 / EN 🇬🇧)
-Switch the entire studio interface in 1 click.
+---
 
-🎚️ 4. 10-Point Track Scoring System (10 / 10 Scale)
-Beat / Instrumental (4 pts): Demo/Idea, Arrangement, Mix, Master.
+## 🚀 Quick Start
 
-Lyrics & Vocals (4 pts): Writing Bars, Scratch/Demo Vocals, Final Takes, Vocal FX & Processing.
+### Prerequisites
+- Node.js (v18 or higher recommended)
+- npm or yarn
 
-Visuals & Promo (2 pts): Cover Art / Music Video Concept, Final Visual Assets.
+### Installation
 
-Built-in lightweight player to audition your bounce demos on the fly (Web Audio API).
+1. **Clone the repository**:
+   ```bash
+   git clone https://github.com/denysochek/trackER.git
+   cd trackER
+   ```
 
-📄 5. Export & Studio Reports
-Studio Sheet: Crisp print-ready format for studio engineers during session lock-ins, or instant Markdown copy to share with the label/team.
+2. **Install dependencies**:
+   ```bash
+   npm install
+   ```
 
-Session Backup: Full database Import & Export via .json stash files.
+3. **Start the local development server**:
+   ```bash
+   npm run dev
+   ```
 
-🎮 Studio Extras & Easter Eggs
-Interactive Vinyl Logo (DJ Scratch & Fly-off):
+4. **Build for production**:
+   ```bash
+   npm run build
+   ```
 
-Real-time rotating vinyl record right on the logo mark.
+5. **Preview production build locally**:
+   ```bash
+   npm run preview
+   ```
 
-Scratch Effect: Hover and pull with your mouse to pull off authentic DJ scratches (synthesized live via Web Audio API).
+---
 
-Fly-Off Action: Hold-click the platter for ~1.5 seconds and watch the disc fly off the turntable with a whistle, spin in mid-air, and crash into the bottom right corner! The deck stays bare with just the spindle until you click the record to pop it back in place with a sharp click.
+## 🔒 Security Architecture
 
-One-Time Master Passphrase:
+```
+Password + Cryptographic Salt
+             │
+             ▼ (PBKDF2 / 100,000 iterations / SHA-256)
+     Derived AES-256 Key
+             │
+             ├──► Encrypt Album Payload (AES-GCM + Fresh IV) ──► Local Storage Vault
+             └──► Decrypt on User Login in Browser Memory
+```
 
-Dynamic key compiled from: Album Title + User + Current Hour.
+- **Zero-Knowledge**: No keys or plaintext project files are ever transmitted across networks.
+- **Offline Reliability**: Works completely offline without requiring an active internet connection.
 
-Revealed ONLY ONCE. No manual edits — reset or generate fresh only.
+---
 
-Allows you to throw a hard passcode lock on any specific album folder.
+## 📄 License
 
-Offline Sync & Local Vault:
+This project is open-source under the [MIT License](LICENSE).
 
-Fully standalone operation without an active internet connection. Seamlessly pack and unpack your track data via .json / .trackER bundles.
+---
+
+Made with passion for music makers and audio producers worldwide. 🎧
