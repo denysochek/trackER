@@ -34,15 +34,56 @@ import { AuthModal } from './components/AuthModal';
 import { AlbumKeyModal } from './components/AlbumKeyModal';
 import { ShareAlbumModal } from './components/ShareAlbumModal';
 import { EasterEggsOverlay } from './components/EasterEggs';
+import { CollaborationEngine } from './utils/collaboration';
+import { CloudSettingsModal } from './components/CloudSettingsModal';
 
 export default function App() {
   // Appearance & Language state
   const [lang, setLang] = useLocalStorage('tracker_lang', 'uk');
   const [theme, setTheme] = useLocalStorage('tracker_theme', 'dark');
   const [accent, setAccent] = useLocalStorage('tracker_accent', 'indigo');
+  const [showMiniPlayer, setShowMiniPlayer] = useLocalStorage('tracker_show_mini_player', true);
 
   // Auth & Encryption state
   const [currentUser, setCurrentUser] = useState(null);
+
+  // Real-time Collaboration Engine
+  const [activePeers, setActivePeers] = useState([]);
+  const [collabEngine, setCollabEngine] = useState(null);
+
+  useEffect(() => {
+    const engine = new CollaborationEngine({
+      user: currentUser || { username: 'guest', artistName: 'Guest' },
+      onPeerUpdate: (peers) => {
+        setActivePeers(peers);
+      },
+      onRemoteAction: (action, payload, sender) => {
+        if (action === 'SYNC_ALBUM' && payload && payload.id) {
+          setAlbums(prev => {
+            const idx = prev.findIndex(a => a.id === payload.id);
+            if (idx >= 0) {
+              const copy = [...prev];
+              copy[idx] = payload;
+              return copy;
+            }
+            return [payload, ...prev];
+          });
+        }
+      }
+    });
+
+    setCollabEngine(engine);
+
+    return () => {
+      engine.destroy();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (collabEngine) {
+      collabEngine.updateUser(currentUser || { username: 'guest', artistName: 'Guest' });
+    }
+  }, [currentUser, collabEngine]);
 
   // Restore session including re-importing AES-GCM CryptoKey from rawKeyBase64
   useEffect(() => {
@@ -96,6 +137,7 @@ export default function App() {
   const [isExportImportModalOpen, setIsExportImportModalOpen] = useState(false);
   const [isAlbumKeyModalOpen, setIsAlbumKeyModalOpen] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [isCloudModalOpen, setIsCloudModalOpen] = useState(false);
   const [sharedAlbumToImport, setSharedAlbumToImport] = useState(null);
 
   // One-time account wipe requested by user
@@ -182,6 +224,10 @@ export default function App() {
       }
     } else {
       localStorage.setItem('tracker_guest_albums', JSON.stringify(newAlbums));
+    }
+
+    if (collabEngine && newAlbums.length > 0) {
+      collabEngine.broadcastAction('SYNC_ALBUM', newAlbums[0]);
     }
   };
 
@@ -612,7 +658,17 @@ export default function App() {
         onOpenStudioSheet={() => setIsStudioSheetModalOpen(true)}
         onOpenExportImport={() => setIsExportImportModalOpen(true)}
         onOpenAlbumKey={() => setIsAlbumKeyModalOpen(true)}
-          onOpenShareModal={() => setIsShareModalOpen(true)}
+        onOpenShareModal={() => setIsShareModalOpen(true)}
+        onOpenCloudSettings={() => setIsCloudModalOpen(true)}
+        onImportSingleAlbum={(importedAlb) => {
+          const updated = [importedAlb, ...albums.filter(a => a.id !== importedAlb.id)];
+          persistAlbums(updated);
+          setCurrentAlbumId(importedAlb.id);
+        }}
+        showMiniPlayer={showMiniPlayer}
+        onToggleMiniPlayer={setShowMiniPlayer}
+        onAccountRestored={() => window.location.reload()}
+        activePeers={activePeers}
         isVinylEjected={isVinylEjected}
         onVinylEject={handleVinylEject}
         currentView={currentView}
@@ -903,6 +959,7 @@ export default function App() {
                     onMoveDown={handleMoveDown}
                     onPlayDemo={handlePlayDemo}
                     isCurrentlyPlaying={playingTrack && playingTrack.id === track.id}
+                    showMiniPlayer={showMiniPlayer}
                     onTriggerConfetti={triggerConfetti}
                     onTriggerEgg={(egg) => setActiveEgg(egg)}
                   />
@@ -1051,6 +1108,7 @@ export default function App() {
         isOpen={isBigBoardOpen}
         onClose={() => setIsBigBoardOpen(false)}
         currentUser={currentUser}
+        collabEngine={collabEngine}
         t={t}
       />
 
@@ -1126,6 +1184,14 @@ export default function App() {
         isOpen={isAuthModalOpen}
         onClose={() => setIsAuthModalOpen(false)}
         onLoginSuccess={handleLoginSuccess}
+        onOpenCloudSettings={() => setIsCloudModalOpen(true)}
+        t={t}
+      />
+
+      <CloudSettingsModal
+        isOpen={isCloudModalOpen}
+        onClose={() => setIsCloudModalOpen(false)}
+        currentUser={currentUser}
         t={t}
       />
 

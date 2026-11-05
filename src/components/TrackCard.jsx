@@ -17,6 +17,7 @@ import {
 import { STAGES, calculateTrackScore, getTrackMaxScore, isTrackFinished } from "../constants";
 import { playStudioClick } from "../utils/soundEffects";
 import { EasterNumberTrigger } from "./EasterEggs";
+import { TrackMiniPlayer } from "./TrackMiniPlayer";
 
 export function TrackCard({
   track,
@@ -30,6 +31,7 @@ export function TrackCard({
   onMoveDown,
   onPlayDemo,
   isCurrentlyPlaying,
+  showMiniPlayer = true,
   onTriggerConfetti,
   onTriggerEgg
 }) {
@@ -552,6 +554,15 @@ export function TrackCard({
           );
         })}
       </div>
+
+      {/* 2. Audio Mini Player with Loop & 3 Markers (Loop Start, Focus, Loop End) */}
+      {showMiniPlayer && track.demoUrl && (
+        <TrackMiniPlayer
+          audioUrl={track.demoUrl}
+          trackTitle={track.title}
+          t={t}
+        />
+      )}
 
       {/* Expanded Track Details */}
       {isExpanded && (

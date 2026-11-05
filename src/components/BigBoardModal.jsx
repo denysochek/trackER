@@ -11,7 +11,11 @@ import {
   User, 
   ShieldAlert, 
   Eye, 
-  Lock 
+  Lock,
+  Edit2,
+  FolderPlus,
+  Layout,
+  Pin
 } from 'lucide-react';
 import { playStudioClick } from '../utils/soundEffects';
 
@@ -19,19 +23,34 @@ export function BigBoardModal({
   isOpen,
   onClose,
   currentUser,
+  collabEngine,
   t
 }) {
   if (!isOpen) return null;
 
-  // Board scope: 'private' (default - only for you) vs 'public' (shared community board)
+  // Board scope: 'private' (personal workspaces) vs 'public' (shared community board)
   const [boardScope, setBoardScope] = useState('private');
 
-  // 1. Private Continuous Canvas (localStorage)
-  const [canvasText, setCanvasText] = useState(() => {
+  // 7. MULTI-BOARD WORKSPACES MANAGEMENT
+  // Custom boards list: [{ id: 'b-1', name: 'Чернетки приспівів', content: '...', createdAt: '...' }]
+  const [customBoards, setCustomBoards] = useState(() => {
+    try {
+      const saved = localStorage.getItem('tracker_custom_boards');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      return [];
+    }
+  });
+
+  // Active board ID: 'main' is the permanently pinned main continuous canvas (cannot be deleted)
+  const [activeBoardId, setActiveBoardId] = useState('main');
+
+  // 1. Pinned Main Continuous Canvas
+  const [mainCanvasText, setMainCanvasText] = useState(() => {
     return localStorage.getItem('tracker_big_board_canvas') || '';
   });
 
-  // 2. Private Personal Stack
+  // 2. Private Personal Stack (Quick Sticky Notes)
   const [privateEntries, setPrivateEntries] = useState(() => {
     try {
       const saved = localStorage.getItem('tracker_big_board_entries');
@@ -46,7 +65,6 @@ export function BigBoardModal({
     try {
       const saved = localStorage.getItem('tracker_shared_public_board');
       if (saved) return JSON.parse(saved);
-      // Default initial welcome on public board
       return [
         {
           id: 'pub-init-1',
@@ -71,8 +89,12 @@ export function BigBoardModal({
   const [newEntryText, setNewEntryText] = useState('');
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [activePrivateTab, setActivePrivateTab] = useState('canvas'); // 'canvas' | 'entries'
-  const [selectedEntryId, setSelectedEntryId] = useState(null); // id of entry showing metadata on click
+  const [selectedEntryId, setSelectedEntryId] = useState(null);
   const [isCopied, setIsCopied] = useState(false);
+
+  // Board Renaming Modal/Prompt State
+  const [isEditingBoardName, setIsEditingBoardName] = useState(false);
+  const [editingBoardTitle, setEditingBoardTitle] = useState('');
 
   // Check if current user is admin
   const isAdmin = currentUser && (
@@ -81,10 +103,15 @@ export function BigBoardModal({
     currentUser.isAdmin === true
   );
 
-  // Persist private canvas
+  // Persist main canvas
   useEffect(() => {
-    localStorage.setItem('tracker_big_board_canvas', canvasText);
-  }, [canvasText]);
+    localStorage.setItem('tracker_big_board_canvas', mainCanvasText);
+  }, [mainCanvasText]);
+
+  // Persist custom boards
+  useEffect(() => {
+    localStorage.setItem('tracker_custom_boards', JSON.stringify(customBoards));
+  }, [customBoards]);
 
   // Persist private entries
   useEffect(() => {
@@ -104,6 +131,86 @@ export function BigBoardModal({
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [onClose]);
+
+  // Active Board Content Helper
+  const getCurrentBoardContent = () => {
+    if (activeBoardId === 'main') {
+      return mainCanvasText;
+    }
+    const found = customBoards.find(b => b.id === activeBoardId);
+    return found ? found.content : '';
+  };
+
+  const handleCurrentBoardTextChange = (newVal) => {
+    if (activeBoardId === 'main') {
+      setMainCanvasText(newVal);
+      if (collabEngine) {
+        collabEngine.broadcastAction('SYNC_BOARD_CANVAS', { text: newVal });
+      }
+    } else {
+      setCustomBoards(customBoards.map(b => {
+        if (b.id === activeBoardId) {
+          return { ...b, content: newVal, updatedAt: new Date().toISOString() };
+        }
+        return b;
+      }));
+    }
+  };
+
+  // 7. CREATE NEW BOARD
+  const handleCreateBoard = () => {
+    playStudioClick();
+    const defaultName = `${t.newBoardPrefix || 'Дошка'} ${customBoards.length + 2}`;
+    const newBoard = {
+      id: `board-${Date.now()}`,
+      name: defaultName,
+      content: '',
+      createdAt: new Date().toISOString()
+    };
+    setCustomBoards([...customBoards, newBoard]);
+    setActiveBoardId(newBoard.id);
+  };
+
+  // 7. RENAME CURRENT BOARD
+  const handleStartRename = () => {
+    if (activeBoardId === 'main') return;
+    const current = customBoards.find(b => b.id === activeBoardId);
+    if (!current) return;
+    setEditingBoardTitle(current.name);
+    setIsEditingBoardName(true);
+  };
+
+  const handleSaveRename = (e) => {
+    e?.preventDefault();
+    if (!editingBoardTitle.trim()) {
+      setIsEditingBoardName(false);
+      return;
+    }
+    setCustomBoards(customBoards.map(b => {
+      if (b.id === activeBoardId) {
+        return { ...b, name: editingBoardTitle.trim() };
+      }
+      return b;
+    }));
+    setIsEditingBoardName(false);
+  };
+
+  // 7. DELETE BOARD (Main is protected and cannot be deleted)
+  const handleDeleteBoard = (boardId, e) => {
+    e?.stopPropagation();
+    if (boardId === 'main') {
+      alert(t.mainBoardCannotBeDeleted || 'Головне суцільне полотно прикріплене за замовчуванням і не може бути видалене!');
+      return;
+    }
+    if (window.confirm(t.deleteBoardConfirm || 'Видалити цю дошку?')) {
+      playStudioClick();
+      const filtered = customBoards.filter(b => b.id !== boardId);
+      setCustomBoards(filtered);
+      if (activeBoardId === boardId) {
+        setActiveBoardId('main');
+      }
+    }
+  };
 
   const handleAddPrivateEntry = (e) => {
     e?.preventDefault();
@@ -137,6 +244,10 @@ export function BigBoardModal({
     setPublicEntries([entry, ...publicEntries]);
     setNewEntryText('');
     setIsAnonymous(false);
+
+    if (collabEngine) {
+      collabEngine.broadcastAction('NEW_PUBLIC_ENTRY', entry);
+    }
   };
 
   const handleDeletePublicEntry = (id) => {
@@ -158,35 +269,41 @@ export function BigBoardModal({
         onClick={(e) => e.stopPropagation()}
         style={{
           background: '#ffffff',
-          color: '#000000',
-          boxShadow: '0 24px 60px rgba(0,0,0,0.85)'
+          color: '#1a1a1a',
+          maxWidth: '92vw',
+          width: 1200,
+          height: '88vh',
+          borderRadius: '16px',
+          display: 'flex',
+          flexDirection: 'column',
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.4)',
+          overflow: 'hidden',
+          border: '1.5px solid #000000'
         }}
       >
-        
-        {/* Board Top Header */}
-        <div className="big-board-header">
-          
-          {/* Left: Icon & Scope Switcher (Особиста дошка vs Загальна дошка) */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-            <div style={{
-              width: 38,
-              height: 38,
-              borderRadius: '50%',
-              background: '#000000',
-              color: '#ffffff',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontWeight: 800,
-              fontSize: '1.1rem'
-            }}>
-              ✎
+        {/* Top Header */}
+        <div style={{
+          padding: '16px 24px',
+          borderBottom: '2px solid #000000',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          background: '#ffffff'
+        }}>
+          {/* Left: Brand & Scope switcher */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ fontSize: '1.25rem', fontWeight: 800, letterSpacing: '-0.03em' }}>
+                BIG<span style={{ background: '#000000', color: '#ffffff', padding: '1px 6px', borderRadius: '4px', marginLeft: 2 }}>BOARD</span>
+              </span>
             </div>
 
+            <div style={{ width: 1, height: 24, background: '#cccccc' }} />
+
+            {/* Scope Switcher: Private Spaces vs Community Public Board */}
             <div>
-              {/* Primary Switch between Private and Public Board */}
               <div style={{
-                background: '#e5e5e3',
+                background: '#eeeeee',
                 borderRadius: '999px',
                 padding: '3px',
                 display: 'inline-flex',
@@ -208,7 +325,7 @@ export function BigBoardModal({
                     color: boardScope === 'private' ? '#ffffff' : '#555555'
                   }}
                 >
-                  🔒 {t.privateBoard || 'Особиста дошка'}
+                  🔒 {t.privateBoard || 'Особисті дошки'}
                 </button>
 
                 <button
@@ -232,15 +349,13 @@ export function BigBoardModal({
               </div>
 
               <div style={{ fontSize: '0.76rem', color: '#666666', marginTop: 3 }}>
-                {boardScope === 'private' ? (t.privateBoardDesc || 'Ваш приватний простір для текстів та нотаток') : (t.publicBoardDesc || 'Спільна дошка думок: відкрита для всіх')}
+                {boardScope === 'private' ? (t.privateBoardDesc || 'Ваші персональні простори, дошки для концептів і текстів') : (t.publicBoardDesc || 'Спільна дошка думок: відкрита для всіх')}
               </div>
             </div>
           </div>
 
-          {/* Right: Actions */}
+          {/* Right: Close Button */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            
-            {/* Close Button */}
             <button
               onClick={onClose}
               style={{
@@ -259,7 +374,6 @@ export function BigBoardModal({
             >
               <X size={18} />
             </button>
-
           </div>
         </div>
 
@@ -267,56 +381,151 @@ export function BigBoardModal({
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
           
           {/* ========================================================
-              1. {t.privateBoardTitle || "Особиста дошка"}
+              1. {t.privateBoardTitle || "Особисті дошки"}
               ======================================================== */}
           {boardScope === 'private' && (
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', position: 'relative' }}>
               
-              {/* Secondary Subtabs for Private: Continuous Canvas vs Stack of entries */}
+              {/* 7. Board Workspaces Bar: Permanently Pinned Main Canvas + Custom Boards + Create Board Button */}
               <div style={{
-                padding: '10px 24px',
-                background: '#f8f8f7',
-                borderBottom: '1px solid #e0e0df',
+                padding: '8px 24px',
+                background: '#f4f4f3',
+                borderBottom: '1px solid #dcdcdb',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'space-between'
+                justifyContent: 'space-between',
+                gap: 12,
+                flexWrap: 'wrap'
               }}>
-                <div style={{ display: 'flex', gap: 8 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: '0.74rem', fontWeight: 700, color: '#666666', textTransform: 'uppercase', marginRight: 4 }}>
+                    {t.boards || 'Дошки'}:
+                  </span>
+
+                  {/* 1. MAIN PINNED BOARD (Cannot be deleted) */}
                   <button
-                    onClick={() => setActivePrivateTab('canvas')}
-                    style={{
-                      border: 'none',
-                      padding: '4px 12px',
-                      borderRadius: '6px',
-                      fontSize: '0.78rem',
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                      background: activePrivateTab === 'canvas' ? '#e2e2e0' : 'transparent',
-                      color: '#000000'
+                    onClick={() => {
+                      playStudioClick();
+                      setActiveBoardId('main');
                     }}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      border: activeBoardId === 'main' ? '2px solid #000000' : '1px solid #cccccc',
+                      padding: '4px 12px',
+                      borderRadius: '8px',
+                      fontSize: '0.8rem',
+                      fontWeight: activeBoardId === 'main' ? 800 : 500,
+                      cursor: 'pointer',
+                      background: activeBoardId === 'main' ? '#000000' : '#ffffff',
+                      color: activeBoardId === 'main' ? '#ffffff' : '#222222'
+                    }}
+                    title={t.mainPinnedDesc || "Головне суцільне полотно (закріплено)"}
                   >
-                    {t.canvasTab || 'Суцільне полотно'}
+                    <Pin size={11} color={activeBoardId === 'main' ? '#eab308' : '#888888'} />
+                    <span>{t.mainCanvas || 'Головне полотно'}</span>
                   </button>
+
+                  {/* CUSTOM USER BOARDS (Renameable & Deleteable) */}
+                  {customBoards.map(board => {
+                    const isActive = activeBoardId === board.id;
+                    return (
+                      <div
+                        key={board.id}
+                        onClick={() => {
+                          playStudioClick();
+                          setActiveBoardId(board.id);
+                        }}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 6,
+                          border: isActive ? '2px solid #000000' : '1px solid #cccccc',
+                          padding: '4px 8px 4px 10px',
+                          borderRadius: '8px',
+                          fontSize: '0.8rem',
+                          fontWeight: isActive ? 700 : 500,
+                          cursor: 'pointer',
+                          background: isActive ? '#000000' : '#ffffff',
+                          color: isActive ? '#ffffff' : '#222222'
+                        }}
+                      >
+                        <Layout size={12} color={isActive ? '#38bdf8' : '#888888'} />
+                        <span style={{ maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {board.name}
+                        </span>
+
+                        {/* Delete Custom Board Icon */}
+                        <button
+                          onClick={(e) => handleDeleteBoard(board.id, e)}
+                          style={{
+                            border: 'none',
+                            background: 'transparent',
+                            cursor: 'pointer',
+                            color: isActive ? '#f87171' : '#999999',
+                            padding: '2px 4px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            borderRadius: '4px'
+                          }}
+                          title={t.deleteBoard || "Видалити дошку"}
+                        >
+                          <Trash2 size={11} />
+                        </button>
+                      </div>
+                    );
+                  })}
+
+                  {/* 7. Create New Custom Board Button */}
                   <button
-                    onClick={() => setActivePrivateTab('entries')}
+                    onClick={handleCreateBoard}
                     style={{
-                      border: 'none',
-                      padding: '4px 12px',
-                      borderRadius: '6px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 5,
+                      border: '1.5px dashed #555555',
+                      padding: '4px 10px',
+                      borderRadius: '8px',
                       fontSize: '0.78rem',
                       fontWeight: 600,
                       cursor: 'pointer',
-                      background: activePrivateTab === 'entries' ? '#e2e2e0' : 'transparent',
-                      color: '#000000'
+                      background: 'transparent',
+                      color: '#333333'
                     }}
+                    title={t.createNewBoard || "Створити власну нову дошку"}
                   >
-                    {t.draftsTab || 'Окремі чернетки'} ({privateEntries.length})
+                    <FolderPlus size={12} />
+                    <span>{t.newBoard || '+ Дошка'}</span>
                   </button>
                 </div>
 
-                <div style={{ display: 'flex', gap: 8 }}>
+                {/* Right: Board controls (Rename, Copy, Tabs) */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  {activeBoardId !== 'main' && (
+                    <button
+                      onClick={handleStartRename}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 4,
+                        padding: '4px 8px',
+                        border: '1px solid #999999',
+                        borderRadius: '6px',
+                        background: '#ffffff',
+                        fontSize: '0.74rem',
+                        fontWeight: 600,
+                        cursor: 'pointer'
+                      }}
+                      title={t.renameBoard || "Перейменувати цю дошку"}
+                    >
+                      <Edit2 size={11} />
+                      <span>{t.rename || 'Перейменувати'}</span>
+                    </button>
+                  )}
+
                   <button
-                    onClick={() => handleCopyText(canvasText)}
+                    onClick={() => handleCopyText(getCurrentBoardContent())}
                     style={{
                       display: 'flex',
                       alignItems: 'center',
@@ -332,293 +541,167 @@ export function BigBoardModal({
                     }}
                   >
                     {isCopied ? <Check size={12} color="#16a34a" /> : <Copy size={12} />}
-                    <span>{isCopied ? (t.summaryCopied || 'Скопійовано!') : (t.copyAll || 'Копіювати все')}</span>
+                    <span>{isCopied ? (t.summaryCopied || 'Скопійовано!') : (t.copyAll || 'Копіювати')}</span>
                   </button>
                 </div>
               </div>
 
-              {activePrivateTab === 'canvas' ? (
-                <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-                  <textarea
-                    value={canvasText}
-                    onChange={(e) => setCanvasText(e.target.value)}
-                    placeholder="{t.canvasPlaceholder || 'Пишіть тут чорним текстом: рими, рядки пісень...'}"
-                    className="big-board-textarea"
-                    autoFocus
-                  />
-                  <div style={{
+              {/* Inline Board Rename Form Popup */}
+              {isEditingBoardName && (
+                <form
+                  onSubmit={handleSaveRename}
+                  style={{
+                    background: '#ffffff',
+                    borderBottom: '1px solid #dddddd',
                     padding: '8px 24px',
-                    background: '#fcfcfc',
-                    borderTop: '1px solid #ebebeb',
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'space-between',
-                    fontSize: '0.78rem',
-                    color: '#666666'
-                  }}>
-                    <span>{t.canvasFooter || 'Особисте полотно • Чорний текст'}</span>
-                    <span>{t.wordsCount || 'Слів'}: {canvasText.trim() ? canvasText.trim().split(/\s+/).length : 0} | {t.charsCount || 'Символів'}: {canvasText.length}</span>
-                  </div>
-                </div>
-              ) : (
-                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '20px 28px', overflowY: 'auto' }}>
-                  <form onSubmit={handleAddPrivateEntry} style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
-                    <input
-                      type="text"
-                      value={newEntryText}
-                      onChange={(e) => setNewEntryText(e.target.value)}
-                      placeholder="{t.draftPlaceholder || 'Додайте новий запис чи рядок...'}"
-                      style={{
-                        flex: 1,
-                        padding: '10px 16px',
-                        fontSize: '0.95rem',
-                        color: '#000000',
-                        border: '2px solid #000000',
-                        borderRadius: '10px',
-                        outline: 'none',
-                        fontWeight: 600
-                      }}
-                    />
-                    <button
-                      type="submit"
-                      style={{
-                        padding: '0 20px',
-                        background: '#000000',
-                        color: '#ffffff',
-                        border: 'none',
-                        borderRadius: '10px',
-                        fontWeight: 700,
-                        cursor: 'pointer'
-                      }}
-                    >
-                      Додати
-                    </button>
-                  </form>
-
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                    {privateEntries.map(e => (
-                      <div key={e.id} style={{
-                        padding: '12px 16px',
-                        border: '1.5px solid #222222',
-                        borderRadius: '10px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        gap: 12
-                      }}>
-                        <span style={{ fontSize: '1rem', fontWeight: 600, color: '#000000' }}>{e.text}</span>
-                        <button onClick={() => setPrivateEntries(privateEntries.filter(i => i.id !== e.id))} style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: '#888' }}>
-                          <Trash2 size={15} />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+                    gap: 8
+                  }}
+                >
+                  <span style={{ fontSize: '0.78rem', fontWeight: 600 }}>{t.boardTitleLabel || "Назва дошки"}:</span>
+                  <input
+                    type="text"
+                    value={editingBoardTitle}
+                    onChange={(e) => setEditingBoardTitle(e.target.value)}
+                    autoFocus
+                    style={{
+                      padding: '4px 8px',
+                      borderRadius: 4,
+                      border: '1.5px solid #000000',
+                      fontSize: '0.8rem',
+                      width: 220
+                    }}
+                  />
+                  <button type="submit" className="btn btn-primary btn-sm" style={{ padding: '3px 10px' }}>
+                    {t.save || 'Зберегти'}
+                  </button>
+                  <button type="button" onClick={() => setIsEditingBoardName(false)} className="btn btn-ghost btn-sm">
+                    {t.cancel || 'Скасувати'}
+                  </button>
+                </form>
               )}
+
+              {/* Board Canvas Workspace Textarea */}
+              <div style={{ flex: 1, padding: '20px 28px', display: 'flex', flexDirection: 'column' }}>
+                <textarea
+                  value={getCurrentBoardContent()}
+                  onChange={(e) => handleCurrentBoardTextChange(e.target.value)}
+                  placeholder={
+                    activeBoardId === 'main'
+                      ? (t.mainCanvasPlaceholder || "Головне суцільне полотно альбому...\nПишіть тексти пісень, концепт, структуру та ідеї треків.")
+                      : (t.customBoardPlaceholder || "Текстовий простір цієї дошки...")
+                  }
+                  style={{
+                    flex: 1,
+                    width: '100%',
+                    border: 'none',
+                    outline: 'none',
+                    resize: 'none',
+                    fontFamily: '"SF Pro Text", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                    fontSize: '1.05rem',
+                    lineHeight: '1.7',
+                    background: 'transparent',
+                    color: '#111111'
+                  }}
+                />
+              </div>
 
             </div>
           )}
 
           {/* ========================================================
-              2. {t.publicBoardTitle || "Загальна дошка"}
+              2. {t.publicBoardTitle || "Загальна дошка спільноти"}
               ======================================================== */}
           {boardScope === 'public' && (
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: '#fafafa' }}>
               
-              {/* Write Box: ONLY for registered users */}
-              <div style={{
-                padding: '16px 28px',
-                background: '#f8f8f7',
-                borderBottom: '2px solid #222222'
-              }}>
-                {currentUser ? (
-                  <form onSubmit={handleAddPublicEntry} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                    <div style={{ display: 'flex', gap: 10 }}>
+              {/* Add Entry Input for Community Board */}
+              <div style={{ padding: '16px 24px', background: '#ffffff', borderBottom: '1px solid #e0e0df' }}>
+                <form onSubmit={handleAddPublicEntry} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  <textarea
+                    value={newEntryText}
+                    onChange={(e) => setNewEntryText(e.target.value)}
+                    placeholder={currentUser ? (t.publicEntryPlaceholder || "Напишіть коментар, ідею чи враження для спільноти...") : (t.loginToPostPublic || "Увійдіть в акаунт, щоб залишати записи на спільній дошці")}
+                    disabled={!currentUser}
+                    rows={2}
+                    style={{
+                      width: '100%',
+                      padding: '10px 14px',
+                      borderRadius: '8px',
+                      border: '1.5px solid #cccccc',
+                      outline: 'none',
+                      fontSize: '0.88rem',
+                      fontFamily: 'inherit',
+                      resize: 'none',
+                      background: currentUser ? '#ffffff' : '#f0f0f0'
+                    }}
+                  />
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.8rem', cursor: 'pointer', color: '#555555' }}>
                       <input
-                        type="text"
-                        value={newEntryText}
-                        onChange={(e) => setNewEntryText(e.target.value)}
-                        placeholder="{t.publicPlaceholder || 'Напишіть щось на загальну дошку...'}"
-                        style={{
-                          flex: 1,
-                          padding: '12px 16px',
-                          fontSize: '1rem',
-                          color: '#000000',
-                          background: '#ffffff',
-                          border: '2px solid #000000',
-                          borderRadius: '10px',
-                          outline: 'none',
-                          fontWeight: 600
-                        }}
+                        type="checkbox"
+                        checked={isAnonymous}
+                        onChange={(e) => setIsAnonymous(e.target.checked)}
+                        disabled={!currentUser}
                       />
-                      <button
-                        type="submit"
-                        style={{
-                          padding: '0 24px',
-                          background: '#000000',
-                          color: '#ffffff',
-                          border: 'none',
-                          borderRadius: '10px',
-                          fontWeight: 700,
-                          cursor: 'pointer',
-                          fontSize: '0.92rem'
-                        }}
-                      >
-                        Опублікувати
-                      </button>
-                    </div>
+                      <span>{t.postAnonymously || "Анонімно (сховати мій нікнейм)"}</span>
+                    </label>
 
-                    {/* Anonymous toggle checkbox */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: '0.82rem', fontWeight: 600, color: '#222222' }}>
-                        <input
-                          type="checkbox"
-                          checked={isAnonymous}
-                          onChange={(e) => setIsAnonymous(e.target.checked)}
-                          style={{ cursor: 'pointer', accentColor: '#000000' }}
-                        />
-                        <span>{t.postAnonymously || 'Анонімно'} (на дошці буде тільки текст без підпису)</span>
-                      </label>
-                    </div>
-                  </form>
-                ) : (
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 10,
-                    padding: '10px 16px',
-                    background: '#eeeeed',
-                    borderRadius: '10px',
-                    color: '#444444',
-                    fontSize: '0.85rem'
-                  }}>
-                    <Lock size={16} />
-                    <span>{t.onlyRegisteredCanPost || 'Писати на загальній дошці можуть тільки зареєстровані користувачі.'}</span>
+                    <button
+                      type="submit"
+                      disabled={!currentUser || !newEntryText.trim()}
+                      className="btn btn-primary btn-sm"
+                      style={{ padding: '6px 16px', fontWeight: 700 }}
+                    >
+                      <Plus size={13} />
+                      <span>{t.publishEntry || "Опублікувати"}</span>
+                    </button>
                   </div>
-                )}
+                </form>
               </div>
 
-              {/* Public Entries Feed: By default shows ONLY clean text */}
-              <div style={{ flex: 1, padding: '20px 28px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 12 }}>
-                {publicEntries.length === 0 ? (
-                  <div style={{ textAlign: 'center', padding: '60px 20px', color: '#777' }}>
-                    {t.emptyPublicBoard || 'Загальна дошка поки що порожня. Залиште свій запис першим!'}
-                  </div>
-                ) : (
-                  publicEntries.map(entry => {
-                    const isSelected = selectedEntryId === entry.id;
-                    const canDelete = isAdmin || (currentUser && currentUser.username === entry.author);
-
-                    return (
-                      <div
-                        key={entry.id}
-                        onClick={() => setSelectedEntryId(isSelected ? null : entry.id)}
-                        style={{
-                          padding: '16px 20px',
-                          background: '#ffffff',
-                          border: isSelected ? '2px solid #000000' : '1.5px solid #dddddd',
-                          borderRadius: '12px',
-                          cursor: 'pointer',
-                          transition: 'all 0.15s ease',
-                          position: 'relative'
-                        }}
-                        title={t.copyCardTip || "Натисніть на картку, щоб переглянути інфо або скопіювати текст"}
-                      >
-                        {/* 1. ONLY TEXT SHOWN HERE (As requested: "просто його текст") */}
-                        <div style={{
-                          fontSize: '1.18rem',
-                          lineHeight: 1.6,
-                          fontWeight: 600,
-                          color: '#000000',
-                          wordBreak: 'break-word',
-                          whiteSpace: 'pre-wrap',
-                          userSelect: 'text'
-                        }}>
-                          {entry.text}
-                        </div>
-
-                        {/* 2. Metadata revealed only upon clicking empty space / card */}
-                        {isSelected && (
-                          <div 
-                            onClick={(e) => e.stopPropagation()}
-                            style={{
-                              marginTop: 12,
-                              paddingTop: 10,
-                              borderTop: '1px dashed #cccccc',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'space-between',
-                              fontSize: '0.78rem',
-                              color: '#666666',
-                              flexWrap: 'wrap',
-                              gap: 10
-                            }}
-                          >
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                              <span>🕒 {entry.createdAt}</span>
-
-                              {/* Author display */}
-                              {!entry.isAnonymous ? (
-                                <span style={{ fontWeight: 600, color: '#111111' }}>
-                                  👤 {t.authorLabel || 'Автор'}: {entry.author}
-                                </span>
-                              ) : (
-                                <span>
-                                  {isAdmin ? (
-                                    <strong style={{ color: '#dc2626' }}>
-                                      🕵️ {t.adminReveal || 'Адмін-доступ (Анонім:'} {entry.author})
-                                    </strong>
-                                  ) : (
-                                    <span style={{ fontStyle: 'italic', color: '#888888' }}>
-                                      ({t.anonymousPost || 'Анонімний запис'})
-                                    </span>
-                                  )}
-                                </span>
-                              )}
-                            </div>
-
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                              <button
-                                onClick={() => handleCopyText(entry.text)}
-                                style={{
-                                  border: '1px solid #888',
-                                  background: '#f5f5f5',
-                                  padding: '3px 8px',
-                                  borderRadius: '6px',
-                                  cursor: 'pointer',
-                                  fontSize: '0.75rem',
-                                  fontWeight: 600
-                                }}
-                              >
-                                {t.copyPostText || 'Копіювати текст'}
-                              </button>
-
-                              {canDelete && (
-                                <button
-                                  onClick={() => handleDeletePublicEntry(entry.id)}
-                                  style={{
-                                    border: 'none',
-                                    background: '#fee2e2',
-                                    color: '#b91c1c',
-                                    padding: '4px 10px',
-                                    borderRadius: '6px',
-                                    cursor: 'pointer',
-                                    fontSize: '0.75rem',
-                                    fontWeight: 700
-                                  }}
-                                  title={t.deleteEntry || "Видалити цей запис"}
-                                >
-                                  {isAdmin && entry.author !== currentUser?.username ? (t.deleteAdmin || 'Видалити (Адмін)') : (t.deletePost || 'Видалити')}
-                                </button>
-                              )}
-                            </div>
-                          </div>
+              {/* Feed of Public Entries */}
+              <div style={{ flex: 1, overflowY: 'auto', padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {publicEntries.map(entry => (
+                  <div
+                    key={entry.id}
+                    style={{
+                      background: '#ffffff',
+                      border: '1.5px solid #e5e5e5',
+                      borderRadius: '10px',
+                      padding: '14px 16px',
+                      boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.78rem', fontWeight: 700 }}>
+                        <User size={13} color="#000000" />
+                        <span>{entry.isAnonymous ? (t.anonymousProducer || "Анонімний продюсер") : `@${entry.author}`}</span>
+                        {entry.author === 'dionisii' && (
+                          <span style={{ fontSize: '0.62rem', background: '#eab308', color: '#000', padding: '1px 5px', borderRadius: 4, fontWeight: 800 }}>
+                            ADMIN
+                          </span>
                         )}
-
                       </div>
-                    );
-                  })
-                )}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span style={{ fontSize: '0.72rem', color: '#888888' }}>{entry.createdAt}</span>
+                        {(isAdmin || (currentUser && currentUser.username === entry.author)) && (
+                          <button
+                            onClick={() => handleDeletePublicEntry(entry.id)}
+                            style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: '#ef4444' }}
+                            title={t.deleteEntry || "Видалити"}
+                          >
+                            <Trash2 size={12} />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                    <p style={{ margin: 0, fontSize: '0.88rem', lineHeight: 1.5, color: '#222222' }}>
+                      {entry.text}
+                    </p>
+                  </div>
+                ))}
               </div>
 
             </div>

@@ -1,11 +1,28 @@
 import React, { useState, useEffect } from "react";
-import { X, Lock, ShieldCheck, User, KeyRound, Sparkles, ArrowRight, Trash2, CheckCircle2, Crown } from "lucide-react";
+import { 
+  X, 
+  Lock, 
+  ShieldCheck, 
+  User, 
+  KeyRound, 
+  Sparkles, 
+  ArrowRight, 
+  Trash2, 
+  CheckCircle2, 
+  Crown,
+  AlertTriangle,
+  Globe,
+  UploadCloud,
+  FileQuestion
+} from "lucide-react";
 import { hashPasswordForAuth, deriveEncryptionKey, generateSalt } from "../utils/crypto";
+import { CloudStorageService } from "../utils/cloudStorage";
 
 export function AuthModal({
   isOpen,
   onClose,
   onLoginSuccess,
+  onOpenCloudSettings,
   t
 }) {
   if (!isOpen) return null;
@@ -29,11 +46,13 @@ export function AuthModal({
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [otherBrowserWarning, setOtherBrowserWarning] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
       setErrorMessage("");
       setSuccessMessage("");
+      setOtherBrowserWarning(false);
       if (!hasExistingAccounts()) {
         setTab("signup");
       }
@@ -46,12 +65,15 @@ export function AuthModal({
     setPassword("");
     setConfirmPassword("");
     setErrorMessage("");
+    setOtherBrowserWarning(false);
   };
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setErrorMessage("");
     setSuccessMessage("");
+    setOtherBrowserWarning(false);
+
     if (!username.trim() || !password) {
       setErrorMessage(t.fillAllFields || "Будь ласка, заповніть усі поля.");
       return;
@@ -64,7 +86,12 @@ export function AuthModal({
       const userRecord = usersRegistry[normalizedUser];
 
       if (!userRecord) {
-        setErrorMessage(t.invalidCredentials || "Користувача не знайдено або пароль невірний.");
+        // Warning: Account might be in Arc, Safari, Chrome or another browser
+        setOtherBrowserWarning(true);
+        setErrorMessage(
+          t.userNotFoundInThisBrowser || 
+          `Акаунт «@${username.trim()}» не знайдено в цьому браузері! Ймовірно, він був зареєстрований в іншому браузері (наприклад Arc / Chrome / Safari).`
+        );
         setIsLoading(false);
         return;
       }
@@ -79,7 +106,6 @@ export function AuthModal({
 
       // Derive AES encryption key
       const encryptionKey = await deriveEncryptionKey(password, userRecord.salt);
-
       const isAdmin = userRecord.isAdmin || normalizedUser === "dionisii";
 
       onLoginSuccess({
@@ -159,41 +185,48 @@ export function AuthModal({
         isAdmin,
         createdAt: new Date().toISOString()
       };
+
       localStorage.setItem("tracker_users_registry", JSON.stringify(usersRegistry));
 
-      onLoginSuccess({
-        username: username.trim(),
-        artistName: artistName.trim() || username.trim(),
-        salt,
-        encryptionKey,
-        isAdmin
-      }, rememberMe);
+      setSuccessMessage(t.accountCreatedSuccess || "Акаунт успішно створено!");
 
-      resetForm();
-      onClose();
+      setTimeout(() => {
+        onLoginSuccess({
+          username: username.trim(),
+          artistName: artistName.trim() || username.trim(),
+          salt,
+          encryptionKey,
+          isAdmin
+        }, rememberMe);
+
+        resetForm();
+        onClose();
+      }, 700);
+
     } catch (err) {
       console.error(err);
-      setErrorMessage("Помилка генерації крипто-ключа при реєстрації.");
+      setErrorMessage("Помилка створення акаунта.");
     } finally {
       setIsLoading(false);
     }
   };
 
-
-
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-card" style={{ maxWidth: 460 }} onClick={(e) => e.stopPropagation()}>
+    <div className="modal-backdrop" onClick={onClose} style={{ zIndex: 110 }}>
+      <div 
+        className="modal" 
+        onClick={(e) => e.stopPropagation()}
+        style={{ maxWidth: 440, width: "90%" }}
+      >
         
         {/* Header */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <div style={{
-              width: 36,
-              height: 36,
-              borderRadius: 10,
+              width: 38,
+              height: 38,
+              borderRadius: "50%",
               background: "var(--accent-subtle)",
-              border: "1px solid rgba(var(--accent-rgb), 0.2)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center"
@@ -216,10 +249,10 @@ export function AuthModal({
         </div>
 
         {/* Tab Switcher */}
-        <div className="segmented-control" style={{ width: "100%", marginBottom: 18 }}>
+        <div className="segmented-control" style={{ width: "100%", marginBottom: 16 }}>
           <button
             type="button"
-            onClick={() => { setTab("login"); setErrorMessage(""); setSuccessMessage(""); }}
+            onClick={() => { setTab("login"); setErrorMessage(""); setSuccessMessage(""); setOtherBrowserWarning(false); }}
             className={`segmented-control-btn ${tab === "login" ? "active" : ""}`}
             style={{ flex: 1, justifyContent: "center", padding: "6px" }}
           >
@@ -227,7 +260,7 @@ export function AuthModal({
           </button>
           <button
             type="button"
-            onClick={() => { setTab("signup"); setErrorMessage(""); setSuccessMessage(""); }}
+            onClick={() => { setTab("signup"); setErrorMessage(""); setSuccessMessage(""); setOtherBrowserWarning(false); }}
             className={`segmented-control-btn ${tab === "signup" ? "active" : ""}`}
             style={{ flex: 1, justifyContent: "center", padding: "6px" }}
           >
@@ -235,22 +268,81 @@ export function AuthModal({
           </button>
         </div>
 
+        {/* SIGNUP WARNING: Local Browser Storage Notice */}
+        {tab === "signup" && (
+          <div style={{
+            background: "rgba(234, 179, 8, 0.1)",
+            border: "1.5px solid rgba(234, 179, 8, 0.35)",
+            borderRadius: "var(--radius-md)",
+            padding: "10px 12px",
+            marginBottom: 14,
+            display: "flex",
+            gap: 10,
+            alignItems: "flex-start"
+          }}>
+            <AlertTriangle size={16} color="#eab308" style={{ flexShrink: 0, marginTop: 2 }} />
+            <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)", lineHeight: 1.45 }}>
+              <strong style={{ color: "#eab308" }}>{t.signupWarningTitle || "Важливо при реєстрації:"}</strong> {t.signupBrowserWarning || "Акаунт створюється локально у цьому браузері. Щоб відкрити його в іншому браузері (наприклад, Zen або Arc), перенесіть його через ZIP-архів або підключіть Хмарне Збереження."}
+            </div>
+          </div>
+        )}
+
         {/* Notice on Client-Side Encryption */}
         <div style={{
           background: "var(--bg-pill)",
           border: "1px solid var(--border-subtle)",
           borderRadius: "var(--radius-md)",
-          padding: "10px 12px",
-          marginBottom: 16,
+          padding: "8px 12px",
+          marginBottom: 14,
           display: "flex",
           gap: 10,
-          alignItems: "flex-start"
+          alignItems: "center"
         }}>
-          <Lock size={15} color="var(--accent)" style={{ flexShrink: 0, marginTop: 2 }} />
-          <p style={{ fontSize: "0.75rem", color: "var(--text-secondary)", lineHeight: 1.45 }}>
+          <Lock size={14} color="var(--accent)" style={{ flexShrink: 0 }} />
+          <p style={{ fontSize: "0.73rem", color: "var(--text-secondary)", lineHeight: 1.4, margin: 0 }}>
             {t.encryptionNotice}
           </p>
         </div>
+
+        {/* OTHER BROWSER WARNING ALERT BANNER */}
+        {otherBrowserWarning && (
+          <div style={{
+            background: "rgba(239, 68, 68, 0.08)",
+            border: "1.5px solid rgba(239, 68, 68, 0.35)",
+            borderRadius: "var(--radius-md)",
+            padding: "12px",
+            marginBottom: 14,
+            display: "flex",
+            flexDirection: "column",
+            gap: 8
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 7, color: "var(--color-danger)", fontWeight: 700, fontSize: "0.82rem" }}>
+              <Globe size={16} />
+              <span>{t.browserMismatchTitle || "Акаунт у іншому браузері?"}</span>
+            </div>
+            <p style={{ fontSize: "0.75rem", color: "var(--text-secondary)", lineHeight: 1.45, margin: 0 }}>
+              {t.browserMismatchDesc || "Якщо ви раніше працювали в іншому браузері (Arc / Chrome / Safari), сховища браузерів повністю розділені. Щоб увійти тут:"}
+            </p>
+            <div style={{ fontSize: "0.74rem", color: "var(--text-muted)", paddingLeft: 8 }}>
+              1. Відкрийте попередній браузер і виберіть <strong>«Експортувати акаунт (ZIP)»</strong>.<br/>
+              2. Або відновіть акаунт через <strong>«Хмарне збереження»</strong>.
+            </div>
+            {onOpenCloudSettings && (
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  onOpenCloudSettings();
+                }}
+                className="btn btn-secondary btn-sm"
+                style={{ alignSelf: "flex-start", marginTop: 4, fontSize: "0.75rem" }}
+              >
+                <UploadCloud size={13} color="var(--accent)" />
+                <span>{t.openCloudRestore || "Відкрити Хмарне збереження"}</span>
+              </button>
+            )}
+          </div>
+        )}
 
         {/* Success message banner */}
         {successMessage && (
@@ -303,7 +395,11 @@ export function AuthModal({
               type="text"
               required
               value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              onChange={(e) => {
+                setUsername(e.target.value);
+                setOtherBrowserWarning(false);
+                setErrorMessage("");
+              }}
               placeholder="dionisii"
               className="input"
             />
@@ -366,7 +462,7 @@ export function AuthModal({
             </label>
           </div>
 
-          {errorMessage && (
+          {errorMessage && !otherBrowserWarning && (
             <div style={{
               background: "var(--color-danger-bg)",
               color: "var(--color-danger)",

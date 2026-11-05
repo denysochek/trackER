@@ -10,10 +10,14 @@ import {
   Download,
   Disc3,
   Key,
-  Home
+  Home,
+  Upload,
+  Users
 } from 'lucide-react';
 import { UserMenu } from './UserMenu';
+import { MetronomeWidget } from './MetronomeWidget';
 import { playVinylScratch, playVinylFlyOff, playRollingSound } from '../utils/soundEffects';
+import { importAlbumFromFile } from '../utils/zipArchive';
 
 export function Header({
   lang,
@@ -33,6 +37,12 @@ export function Header({
   onOpenStudioSheet,
   onOpenExportImport,
   onOpenAlbumKey,
+  onImportSingleAlbum,
+  onOpenCloudSettings,
+  showMiniPlayer,
+  onToggleMiniPlayer,
+  onAccountRestored,
+  activePeers = [],
   isVinylEjected,
   onVinylEject,
   currentView,
@@ -42,6 +52,7 @@ export function Header({
   const [showAlbumMenu, setShowAlbumMenu] = useState(false);
   const [showAccentMenu, setShowAccentMenu] = useState(false);
   const [isScratching, setIsScratching] = useState(false);
+  const albumFileInputRef = useRef(null);
 
   // Scratch tracker refs for accurate physical rotation and drag tracking
   const turntableRef = useRef(null);
@@ -78,135 +89,152 @@ export function Header({
     if (isVinylEjected) return;
     if (e.button !== 0) return; // Must be left mouse button!
     e.preventDefault();
-
     isDraggingRef.current = true;
     setIsScratching(true);
     lastAngleRef.current = getPointerAngle(e.clientX, e.clientY);
-    accumulatedAngleRef.current = 0;
   };
 
-  // Touch Start for mobile/trackpad
   const handleTouchStart = (e) => {
     if (isVinylEjected) return;
-    if (e.touches.length !== 1) return;
-
-    isDraggingRef.current = true;
-    setIsScratching(true);
-    const touch = e.touches[0];
-    lastAngleRef.current = getPointerAngle(touch.clientX, touch.clientY);
-    accumulatedAngleRef.current = 0;
+    if (e.touches.length === 1) {
+      isDraggingRef.current = true;
+      setIsScratching(true);
+      lastAngleRef.current = getPointerAngle(e.touches[0].clientX, e.touches[0].clientY);
+    }
   };
 
-  // Window-level move handler to allow natural dragging even if cursor moves slightly outside the circle
-  useEffect(() => {
-    const handleWindowMouseMove = (e) => {
-      if (!isDraggingRef.current || isVinylEjected) return;
+  // Eject Vinyl Easter Egg
+  const triggerVinylEject = useCallback(() => {
+    if (isVinylEjected) return;
+    isDraggingRef.current = false;
+    setIsScratching(false);
+    accumulatedAngleRef.current = 0;
+    scratchStrokeCountRef.current = 0;
 
-      // Verify left mouse button is still held down (e.buttons === 1)
-      if (e.buttons !== 1) {
-        isDraggingRef.current = false;
-        setIsScratching(false);
-        return;
-      }
+    playVinylFlyOff();
+    setTimeout(() => {
+      playRollingSound();
+    }, 400);
 
-      const currentAngle = getPointerAngle(e.clientX, e.clientY);
-      let delta = currentAngle - lastAngleRef.current;
+    if (onVinylEject) onVinylEject();
+  }, [isVinylEjected, onVinylEject]);
 
-      // Handle wraparound between -180 and 180 degrees
-      if (delta > 180) delta -= 360;
-      if (delta < -180) delta += 360;
+  const handlePointerMove = useCallback((clientX, clientY) => {
+    if (!isDraggingRef.current || isVinylEjected) return;
 
-      lastAngleRef.current = currentAngle;
-      rotationAngleRef.current += delta;
-      accumulatedAngleRef.current += Math.abs(delta);
+    const currentAngle = getPointerAngle(clientX, clientY);
+    let delta = currentAngle - lastAngleRef.current;
 
-      // Rotate vinyl directly with the mouse!
-      if (discElementRef.current) {
-        discElementRef.current.style.transform = `rotate(${rotationAngleRef.current}deg)`;
-      }
+    if (delta > 180) delta -= 360;
+    if (delta < -180) delta += 360;
 
-      // Trigger high-quality scratch sound every ~26 degrees of movement
-      if (accumulatedAngleRef.current >= 26) {
-        accumulatedAngleRef.current = 0;
-        scratchStrokeCountRef.current += 1;
+    rotationAngleRef.current += delta;
+    accumulatedAngleRef.current += Math.abs(delta);
 
-        const direction = delta >= 0 ? 1 : -1;
-        const speedMultiplier = Math.min(2.0, Math.max(0.7, Math.abs(delta) / 12));
+    if (discElementRef.current) {
+      discElementRef.current.style.transform = `rotate(${rotationAngleRef.current}deg)`;
+    }
+
+    // Play scratch sound every ~25 degrees of rotation
+    if (Math.abs(delta) > 4) {
+      scratchStrokeCountRef.current += 1;
+      if (scratchStrokeCountRef.current % 4 === 0) {
+        const direction = delta > 0 ? 1 : -1;
+        const speedMultiplier = Math.min(2.5, Math.max(0.6, Math.abs(delta) / 8));
         playVinylScratch(direction, speedMultiplier);
+      }
+    }
 
-        // After 10 scratches, vinyl flies off and rolls along bottom!
-        if (scratchStrokeCountRef.current >= 50) {
-          isDraggingRef.current = false;
-          setIsScratching(false);
-          scratchStrokeCountRef.current = 0;
-          playVinylFlyOff();
-          if (onVinylEject) {
-            onVinylEject();
-          }
-        }
+    // Easter Egg: if rotated more than 2800 degrees (around 8 full spins fast), vinyl flies off
+    if (accumulatedAngleRef.current > 2800) {
+      triggerVinylEject();
+    }
+
+    lastAngleRef.current = currentAngle;
+  }, [getPointerAngle, isVinylEjected, triggerVinylEject]);
+
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      if (isDraggingRef.current) {
+        handlePointerMove(e.clientX, e.clientY);
       }
     };
 
-    const handleWindowTouchMove = (e) => {
-      if (!isDraggingRef.current || isVinylEjected) return;
-      if (e.touches.length !== 1) return;
-
-      const touch = e.touches[0];
-      const currentAngle = getPointerAngle(touch.clientX, touch.clientY);
-      let delta = currentAngle - lastAngleRef.current;
-
-      if (delta > 180) delta -= 360;
-      if (delta < -180) delta += 360;
-
-      lastAngleRef.current = currentAngle;
-      rotationAngleRef.current += delta;
-      accumulatedAngleRef.current += Math.abs(delta);
-
-      if (discElementRef.current) {
-        discElementRef.current.style.transform = `rotate(${rotationAngleRef.current}deg)`;
-      }
-
-      if (accumulatedAngleRef.current >= 26) {
-        accumulatedAngleRef.current = 0;
-        scratchStrokeCountRef.current += 1;
-
-        const direction = delta >= 0 ? 1 : -1;
-        playVinylScratch(direction, 1.0);
-
-        if (scratchStrokeCountRef.current >= 50) {
-          isDraggingRef.current = false;
-          setIsScratching(false);
-          scratchStrokeCountRef.current = 0;
-          playVinylFlyOff();
-          if (onVinylEject) {
-            onVinylEject();
-          }
-        }
-      }
-    };
-
-    const handleWindowPointerUp = () => {
+    const handleMouseUp = () => {
       if (isDraggingRef.current) {
         isDraggingRef.current = false;
         setIsScratching(false);
       }
     };
 
-    window.addEventListener('mousemove', handleWindowMouseMove);
-    window.addEventListener('mouseup', handleWindowPointerUp);
-    window.addEventListener('touchmove', handleWindowTouchMove, { passive: false });
-    window.addEventListener('touchend', handleWindowPointerUp);
+    const handleTouchMove = (e) => {
+      if (isDraggingRef.current && e.touches.length === 1) {
+        handlePointerMove(e.touches[0].clientX, e.touches[0].clientY);
+      }
+    };
+
+    const handleTouchEnd = () => {
+      if (isDraggingRef.current) {
+        isDraggingRef.current = false;
+        setIsScratching(false);
+      }
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    window.addEventListener('touchmove', handleTouchMove, { passive: false });
+    window.addEventListener('touchend', handleTouchEnd);
 
     return () => {
-      window.removeEventListener('mousemove', handleWindowMouseMove);
-      window.removeEventListener('mouseup', handleWindowPointerUp);
-      window.removeEventListener('touchmove', handleWindowTouchMove);
-      window.removeEventListener('touchend', handleWindowPointerUp);
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+      window.removeEventListener('touchmove', handleTouchMove);
+      window.removeEventListener('touchend', handleTouchEnd);
     };
-  }, [isVinylEjected, onVinylEject, getPointerAngle]);
+  }, [handlePointerMove]);
+
+  // Handle single album import from Header
+  const handleAlbumFileSelected = async (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+
+    try {
+      const importedAlbum = await importAlbumFromFile(file);
+      if (importedAlbum && importedAlbum.id && importedAlbum.title) {
+        if (onImportSingleAlbum) {
+          onImportSingleAlbum(importedAlbum);
+        }
+      } else {
+        alert(t.importAlbumError || "Не вдалося розпізнати альбом у файлі");
+      }
+    } catch (err) {
+      console.error(err);
+      alert(t.importAlbumError || "Помилка імпорту альбому");
+    } finally {
+      if (albumFileInputRef.current) {
+        albumFileInputRef.current.value = "";
+      }
+    }
+  };
 
   return (
-    <header className="glass-header">
+    <header style={{
+      background: 'var(--bg-card)',
+      borderBottom: '1px solid var(--border-subtle)',
+      position: 'sticky',
+      top: 0,
+      zIndex: 50,
+      backdropFilter: 'blur(12px)'
+    }}>
+      {/* Hidden file input for single album import */}
+      <input
+        ref={albumFileInputRef}
+        type="file"
+        accept=".zip,.json,application/zip,application/json"
+        onChange={handleAlbumFileSelected}
+        style={{ display: 'none' }}
+      />
+
       <div style={{
         maxWidth: 1360,
         margin: '0 auto',
@@ -308,94 +336,145 @@ export function Header({
 
           <div style={{ width: 1, height: 20, background: 'var(--border-subtle)' }} />
 
-          {/* Album Selector Dropdown */}
-          <div style={{ position: 'relative' }}>
-            <button
-              onClick={() => setShowAlbumMenu(!showAlbumMenu)}
-              className="btn btn-secondary btn-sm"
-              style={{ display: 'flex', alignItems: 'center', gap: 6 }}
-            >
-              <Layers size={14} color="var(--accent)" />
-              <span style={{ maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: 600 }}>
-                {currentAlbum ? currentAlbum.title : t.selectAlbum}
-              </span>
-              <ChevronDown size={13} color="var(--text-muted)" />
-            </button>
-
-            {showAlbumMenu && (
-              <div
-                style={{
-                  position: 'absolute',
-                  top: 'calc(100% + 6px)',
-                  left: 0,
-                  width: 240,
-                  background: 'var(--bg-card)',
-                  border: '1px solid var(--border-medium)',
-                  borderRadius: 'var(--radius-lg)',
-                  boxShadow: 'var(--shadow-modal)',
-                  padding: '6px',
-                  zIndex: 60
-                }}
+          {/* Album Selector Dropdown & 3. Import Album Button */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <div style={{ position: 'relative' }}>
+              <button
+                onClick={() => setShowAlbumMenu(!showAlbumMenu)}
+                className="btn btn-secondary btn-sm"
+                style={{ display: 'flex', alignItems: 'center', gap: 6 }}
               >
-                <div style={{ padding: '6px 10px', fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  {t.albums} ({albums.length})
-                </div>
+                <Layers size={14} color="var(--accent)" />
+                <span style={{ maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: 600 }}>
+                  {currentAlbum ? currentAlbum.title : t.selectAlbum}
+                </span>
+                <ChevronDown size={13} color="var(--text-muted)" />
+              </button>
 
-                <div style={{ maxHeight: 200, overflowY: 'auto' }}>
-                  {albums.map(alb => (
+              {showAlbumMenu && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: 'calc(100% + 6px)',
+                    left: 0,
+                    width: 250,
+                    background: 'var(--bg-card)',
+                    border: '1px solid var(--border-medium)',
+                    borderRadius: 'var(--radius-lg)',
+                    boxShadow: 'var(--shadow-modal)',
+                    padding: '6px',
+                    zIndex: 60
+                  }}
+                >
+                  <div style={{ padding: '6px 10px', fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    {t.albums} ({albums.length})
+                  </div>
+
+                  <div style={{ maxHeight: 200, overflowY: 'auto' }}>
+                    {albums.map(alb => (
+                      <button
+                        key={alb.id}
+                        onClick={() => {
+                          setCurrentAlbumId(alb.id);
+                          setShowAlbumMenu(false);
+                        }}
+                        style={{
+                          width: '100%',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          padding: '8px 10px',
+                          background: alb.id === currentAlbumId ? 'var(--accent-subtle)' : 'transparent',
+                          border: 'none',
+                          borderRadius: 'var(--radius-sm)',
+                          color: alb.id === currentAlbumId ? 'var(--accent)' : 'var(--text-primary)',
+                          cursor: 'pointer',
+                          fontSize: '0.82rem',
+                          textAlign: 'left'
+                        }}
+                      >
+                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {alb.title}
+                        </span>
+                        {alb.id === currentAlbumId && <Check size={14} />}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div style={{ borderTop: '1px solid var(--border-subtle)', marginTop: 6, paddingTop: 6, display: 'flex', flexDirection: 'column', gap: 4 }}>
                     <button
-                      key={alb.id}
                       onClick={() => {
-                        setCurrentAlbumId(alb.id);
                         setShowAlbumMenu(false);
+                        onOpenNewAlbumModal();
                       }}
-                      style={{
-                        width: '100%',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        padding: '8px 10px',
-                        background: alb.id === currentAlbumId ? 'var(--accent-subtle)' : 'transparent',
-                        border: 'none',
-                        borderRadius: 'var(--radius-sm)',
-                        color: alb.id === currentAlbumId ? 'var(--accent)' : 'var(--text-primary)',
-                        cursor: 'pointer',
-                        fontSize: '0.82rem',
-                        textAlign: 'left'
-                      }}
+                      className="btn btn-sm btn-primary"
+                      style={{ width: '100%', justifyContent: 'center' }}
                     >
-                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {alb.title}
-                      </span>
-                      {alb.id === currentAlbumId && <Check size={14} />}
+                      <Plus size={13} />
+                      {t.newAlbum}
                     </button>
-                  ))}
+                    
+                    {/* Import Album option in dropdown */}
+                    <button
+                      onClick={() => {
+                        setShowAlbumMenu(false);
+                        if (albumFileInputRef.current) albumFileInputRef.current.click();
+                      }}
+                      className="btn btn-sm btn-secondary"
+                      style={{ width: '100%', justifyContent: 'center' }}
+                    >
+                      <Upload size={13} />
+                      {t.importAlbum || "Імпортувати альбом"}
+                    </button>
+                  </div>
                 </div>
+              )}
+            </div>
 
-                <div style={{ borderTop: '1px solid var(--border-subtle)', marginTop: 6, paddingTop: 6 }}>
-                  <button
-                    onClick={() => {
-                      setShowAlbumMenu(false);
-                      onOpenNewAlbumModal();
-                    }}
-                    className="btn btn-sm btn-primary"
-                    style={{ width: '100%', justifyContent: 'center' }}
-                  >
-                    <Plus size={13} />
-                    {t.newAlbum}
-                  </button>
-                </div>
-              </div>
-            )}
+            {/* 3. Dedicated "Import Album" Button directly beside New Album / Selector */}
+            <button
+              onClick={() => {
+                if (albumFileInputRef.current) albumFileInputRef.current.click();
+              }}
+              className="btn btn-secondary btn-sm"
+              style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '4px 9px' }}
+              title={t.importAlbumDesc || "Завантажити файл або ZIP-архів альбому"}
+            >
+              <Upload size={13} color="var(--accent)" />
+              <span style={{ fontSize: '0.78rem', fontWeight: 600 }}>{t.importAlbumBtn || "Імпорт альбому"}</span>
+            </button>
           </div>
-
-
 
         </div>
 
-        {/* Right Tools: Accent picker, Light/Dark, Language, Studio Sheet, Export, User Auth */}
+        {/* Right Tools: Metronome, Collab indicator, Accent picker, Light/Dark, Language, User Auth */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
           
+          {/* 5. Metronome in Top Bar (Ableton & FL Studio) */}
+          <MetronomeWidget t={t} />
+
+          {/* 6. Active Collaboration Presence Indicator */}
+          {activePeers && activePeers.length > 0 && (
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 5,
+                background: 'rgba(34, 197, 94, 0.12)',
+                border: '1px solid rgba(34, 197, 94, 0.3)',
+                borderRadius: 'var(--radius-full)',
+                padding: '2px 8px',
+                fontSize: '0.72rem',
+                color: '#22c55e',
+                fontWeight: 600
+              }}
+              title={`${t.activeCollaborators || "Активні учасники"}: ${activePeers.map(p => p.artistName || p.username).join(', ')}`}
+            >
+              <Users size={12} />
+              <span>{activePeers.length} {t.online || "онлайн"}</span>
+            </div>
+          )}
+
           {/* M3 Accent Color Selector */}
           <div style={{ position: 'relative' }}>
             <button
@@ -506,15 +585,15 @@ export function Header({
             </button>
           </div>
 
-
-
-
-
-          {/* Encrypted User Account Menu */}
+          {/* 1. Encrypted User Account Menu with Export/Import Account */}
           <UserMenu
             currentUser={currentUser}
             onOpenAuth={onOpenAuth}
             onSignOut={onSignOut}
+            onOpenCloudSettings={onOpenCloudSettings}
+            showMiniPlayer={showMiniPlayer}
+            onToggleMiniPlayer={onToggleMiniPlayer}
+            onAccountRestored={onAccountRestored}
             t={t}
           />
 

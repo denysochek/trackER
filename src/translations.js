@@ -412,7 +412,86 @@ export const TRANSLATIONS = {
     addFirstTrack: "Додати перший трек",
     noFilteredTracks: "За цим фільтром нічого не знайдено",
 
-    changesSaved: "Збережено"
+    changesSaved: "Збережено",
+
+    // Нові функції (Акаунт ZIP, Мініпрогравач, Імпорт альбому, Метроном, Співпраця, Мультидошки)
+    exportAccountBtn: "Експортувати акаунт (ZIP)",
+    importAccountBtn: "Імпортувати акаунт (ZIP)",
+    exportAccountDesc: "Вивантажити всі дані акаунта (роботи, дошки, замітки, налаштування) в єдиний ZIP-архів",
+    importAccountDesc: "Завантажити архів акаунта для повного відновлення чи перенесення",
+    exportingZip: "Формування ZIP архіву...",
+    exportZipSuccess: "Акаунт успішно експортовано!",
+    exportZipError: "Помилка експорту акаунта",
+    importingZip: "Розпакування архіву...",
+    importZipSuccess: "Акаунт успішно відновлено!",
+    importZipError: "Помилка імпорту архіву",
+    accountSettings: "Налаштування акаунта",
+    enableMiniPlayer: "Аудіопрогравач треків",
+    importAlbumBtn: "Імпорт альбому",
+    importAlbumDesc: "Завантажити файл або ZIP-архів альбому",
+    importAlbumError: "Не вдалося розпізнати альбом у файлі",
+
+    // Мініпрогравач та мітки
+    marker1: "Мітка 1 (Start)",
+    marker2: "Мітка 2 (Focus)",
+    marker3: "Мітка 3 (End)",
+    marker1Tooltip: "Встановити початок циклу (Loop Start)",
+    marker2SetTooltip: "Встановити мітку фокусу на поточному часі",
+    marker2JumpTooltip: "Стрибок і відтворення з мітки фокусу",
+    marker3Tooltip: "Встановити кінець циклу (Loop End) та увімкнути зациклення",
+    setFocus: "Встановити",
+    resetMarkers: "Скинути мітки",
+    reset: "Скинути",
+
+    // Метроном
+    metronome: "Метроном",
+    metronomeStart: "Запустити метроном",
+    metronomeStop: "Зупинити метроном",
+    metronomeSettings: "Налаштування метронома",
+    metronomeSound: "Звук метронома",
+    startMetronome: "Старт (120 BPM)",
+    stopMetronome: "Зупинити",
+
+    // Співпраця (Collaboration)
+    activeCollaborators: "Активні учасники",
+    online: "онлайн",
+
+    // Мультидошки (Boards)
+    boards: "Дошки",
+    mainCanvas: "Головне полотно",
+    mainPinnedDesc: "Головне суцільне полотно (закріплено за замовчуванням)",
+    mainBoardCannotBeDeleted: "Головне суцільне полотно прикріплене за замовчуванням і не може бути видалене!",
+    newBoard: "+ Дошка",
+    createNewBoard: "Створити власну нову дошку",
+    newBoardPrefix: "Дошка",
+    rename: "Перейменувати",
+    renameBoard: "Перейменувати цю дошку",
+    deleteBoard: "Видалити дошку",
+    deleteBoardConfirm: "Ви дійсно бажаєте видалити цю дошку?",
+    boardTitleLabel: "Назва дошки",
+    mainCanvasPlaceholder: "Головне суцільне полотно альбому...\nПишіть тексти пісень, концепт, структуру та ідеї треків.",
+    customBoardPlaceholder: "Текстовий простір цієї дошки...",
+
+    // Хмарне збереження (Custom Cloud) & Попередження про браузер
+    cloudSyncTitle: "Хмарне збереження",
+    cloudSyncSubtitle: "Підключіть власну хмару або захищений E2E релей",
+    cloudEndpoint: "Адреса вашого сервера / Webhook URL",
+    cloudApiKey: "API Token / Bearer Key (опціонально)",
+    lastCloudSync: "Остання хмарна копія",
+    cloudSaved: "Налаштування хмари збережено!",
+    cloudBackupSuccess: "Акаунт успішно збережено у вашій хмарі!",
+    cloudRestoredSuccess: "Дані успішно відновлено з хмари! Сторінка зараз оновиться...",
+    cloudNoDataFound: "У хмарі ще немає збережень для цього акаунта",
+    loginRequiredCloud: "Увійдіть в акаунт для синхронізації з хмарою",
+    pushToCloud: "Вивантажити в хмару",
+    pullFromCloud: "Відновити з хмари",
+    saveSettings: "Зберегти налаштування",
+
+    signupWarningTitle: "Важливо при реєстрації:",
+    signupBrowserWarning: "Акаунт зберігається локально у цьому браузері. Щоб відкрити його в іншому браузері (наприклад, Zen або Arc), перенесіть його через ZIP-архів або підключіть Хмарне Збереження.",
+    browserMismatchTitle: "Акаунт у іншому браузері?",
+    browserMismatchDesc: "Якщо ви реєструвалися в іншому браузері (Arc / Chrome / Safari), сховища браузерів повністю розділені. Щоб увійти тут:",
+    openCloudRestore: "Відкрити Хмарне збереження"
   },
 
   en: {
@@ -810,7 +889,86 @@ export const TRANSLATIONS = {
     addFirstTrack: "Add First Track",
     noFilteredTracks: "No tracks match your current filter",
 
-    changesSaved: "Saved"
+    changesSaved: "Saved",
+
+    // New Features (Account ZIP, Mini Player, Import Album, Metronome, Collaboration, Boards)
+    exportAccountBtn: "Export Account (ZIP)",
+    importAccountBtn: "Import Account (ZIP)",
+    exportAccountDesc: "Export all user account data (works, boards, notes, settings) into a single ZIP archive",
+    importAccountDesc: "Upload account archive to completely restore or migrate all data",
+    exportingZip: "Generating ZIP archive...",
+    exportZipSuccess: "Account exported successfully!",
+    exportZipError: "Failed to export account",
+    importingZip: "Extracting archive...",
+    importZipSuccess: "Account restored successfully!",
+    importZipError: "Failed to import archive",
+    accountSettings: "Account Settings",
+    enableMiniPlayer: "Track Audio Player",
+    importAlbumBtn: "Import Album",
+    importAlbumDesc: "Upload album JSON or ZIP package with metadata and tracks",
+    importAlbumError: "Failed to recognize album file",
+
+    // Track Mini Player & Markers
+    marker1: "Marker 1 (Start)",
+    marker2: "Marker 2 (Focus)",
+    marker3: "Marker 3 (End)",
+    marker1Tooltip: "Set exact loop start position (Loop Start)",
+    marker2SetTooltip: "Set playback focus point at current timestamp",
+    marker2JumpTooltip: "Jump and playback from focus point",
+    marker3Tooltip: "Set exact loop end position and activate looping",
+    setFocus: "Set",
+    resetMarkers: "Reset markers",
+    reset: "Reset",
+
+    // Metronome
+    metronome: "Metronome",
+    metronomeStart: "Start metronome",
+    metronomeStop: "Stop metronome",
+    metronomeSettings: "Metronome Settings",
+    metronomeSound: "Metronome Sound",
+    startMetronome: "Start (120 BPM)",
+    stopMetronome: "Stop",
+
+    // Collaboration
+    activeCollaborators: "Active Collaborators",
+    online: "online",
+
+    // Flexible Boards
+    boards: "Boards",
+    mainCanvas: "Main Canvas",
+    mainPinnedDesc: "Main continuous canvas (pinned by default)",
+    mainBoardCannotBeDeleted: "The main continuous canvas is pinned by default and cannot be deleted!",
+    newBoard: "+ Board",
+    createNewBoard: "Create custom workspace board",
+    newBoardPrefix: "Board",
+    rename: "Rename",
+    renameBoard: "Rename this board",
+    deleteBoard: "Delete board",
+    deleteBoardConfirm: "Are you sure you want to delete this board?",
+    boardTitleLabel: "Board Title",
+    mainCanvasPlaceholder: "Main continuous album canvas...\nWrite lyrics, concepts, structure, and track ideas.",
+    customBoardPlaceholder: "Workspace text area for this board...",
+
+    // Custom Cloud & Browser Mismatch
+    cloudSyncTitle: "Cloud Storage",
+    cloudSyncSubtitle: "Connect your custom self-hosted cloud or secure E2E relay",
+    cloudEndpoint: "Server Endpoint / Webhook URL",
+    cloudApiKey: "API Token / Bearer Key (optional)",
+    lastCloudSync: "Last Cloud Sync",
+    cloudSaved: "Cloud settings saved!",
+    cloudBackupSuccess: "Account successfully backed up to your cloud!",
+    cloudRestoredSuccess: "Data successfully restored from cloud! Reloading page...",
+    cloudNoDataFound: "No backups found for this account in the cloud",
+    loginRequiredCloud: "Sign in to synchronize with cloud",
+    pushToCloud: "Push to Cloud",
+    pullFromCloud: "Pull from Cloud",
+    saveSettings: "Save Settings",
+
+    signupWarningTitle: "Important on Sign Up:",
+    signupBrowserWarning: "Your account is stored locally inside this browser. To access it from another browser (e.g. Zen or Arc), migrate via Account ZIP or connect Cloud Storage.",
+    browserMismatchTitle: "Account in another browser?",
+    browserMismatchDesc: "If you previously registered in a different browser (Arc / Chrome / Safari), their local storages are isolated. To access your data here:",
+    openCloudRestore: "Open Cloud Storage"
   }
 };
 

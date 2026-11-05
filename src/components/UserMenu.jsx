@@ -1,13 +1,36 @@
-import React, { useState } from "react";
-import { User, Lock, LogOut, ShieldCheck, ChevronDown, Crown } from "lucide-react";
+import React, { useState, useRef } from "react";
+import { 
+  User, 
+  Lock, 
+  LogOut, 
+  ShieldCheck, 
+  ChevronDown, 
+  Crown, 
+  DownloadCloud, 
+  UploadCloud, 
+  Volume2, 
+  Sliders, 
+  Check, 
+  Loader2,
+  Cloud
+} from "lucide-react";
+import { exportAccountAsZip, importAccountFromZip } from "../utils/zipArchive";
 
 export function UserMenu({
   currentUser,
   onOpenAuth,
   onSignOut,
+  onOpenCloudSettings,
+  showMiniPlayer,
+  onToggleMiniPlayer,
+  onAccountRestored,
   t
 }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
+  const [statusMsg, setStatusMsg] = useState("");
+  const fileInputRef = useRef(null);
 
   if (!currentUser) {
     return (
@@ -25,8 +48,69 @@ export function UserMenu({
   const initial = currentUser.artistName ? currentUser.artistName.charAt(0).toUpperCase() : "U";
   const isAdmin = currentUser.isAdmin || (currentUser.username && currentUser.username.toLowerCase() === "dionisii");
 
+  const handleExportAccount = async () => {
+    setIsExporting(true);
+    setStatusMsg(t.exportingZip || "Формування ZIP архіву...");
+    try {
+      const filename = await exportAccountAsZip(currentUser);
+      setStatusMsg(t.exportZipSuccess || "Акаунт успішно експортовано!");
+      setTimeout(() => setStatusMsg(""), 2500);
+    } catch (err) {
+      console.error(err);
+      setStatusMsg(t.exportZipError || "Помилка експорту акаунта");
+      setTimeout(() => setStatusMsg(""), 3000);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleTriggerImport = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
+  const handleFileImport = async (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+
+    setIsImporting(true);
+    setStatusMsg(t.importingZip || "Розпакування архіву...");
+    try {
+      const result = await importAccountFromZip(file);
+      setStatusMsg(t.importZipSuccess || "Акаунт успішно відновлено!");
+      setTimeout(() => {
+        setStatusMsg("");
+        setIsOpen(false);
+        if (onAccountRestored) {
+          onAccountRestored();
+        } else {
+          window.location.reload();
+        }
+      }, 1500);
+    } catch (err) {
+      console.error(err);
+      setStatusMsg(t.importZipError || "Помилка імпорту архіву");
+      setTimeout(() => setStatusMsg(""), 3000);
+    } finally {
+      setIsImporting(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
+
   return (
     <div style={{ position: "relative" }}>
+      {/* Hidden file input for Account ZIP import */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".zip,application/zip"
+        onChange={handleFileImport}
+        style={{ display: "none" }}
+      />
+
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="btn btn-secondary btn-sm"
@@ -75,13 +159,13 @@ export function UserMenu({
           position: "absolute",
           top: "calc(100% + 8px)",
           right: 0,
-          width: 240,
+          width: 260,
           background: "var(--bg-card)",
           border: "1px solid var(--border-medium)",
           borderRadius: "var(--radius-lg)",
           boxShadow: "var(--shadow-modal)",
           padding: "12px",
-          zIndex: 70
+          zIndex: 90
         }}>
           {/* User info */}
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12, paddingBottom: 10, borderBottom: "1px solid var(--border-subtle)" }}>
@@ -115,11 +199,98 @@ export function UserMenu({
             </div>
           </div>
 
+          {/* Account Settings Section */}
+          <div style={{ marginBottom: 10 }}>
+            <div style={{ fontSize: "0.7rem", color: "var(--text-muted)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>
+              {t.accountSettings || "Налаштування акаунта"}
+            </div>
+
+            {/* Mini Player Toggle in Account Settings */}
+            <label style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              padding: "6px 8px",
+              background: "var(--bg-pill)",
+              borderRadius: "var(--radius-sm)",
+              cursor: "pointer",
+              marginBottom: 8
+            }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: "0.78rem" }}>
+                <Volume2 size={13} color="var(--accent)" />
+                <span>{t.enableMiniPlayer || "Аудіопрогравач треків"}</span>
+              </div>
+              <input
+                type="checkbox"
+                checked={!!showMiniPlayer}
+                onChange={(e) => onToggleMiniPlayer && onToggleMiniPlayer(e.target.checked)}
+                style={{ accentColor: "var(--accent)", cursor: "pointer" }}
+              />
+            </label>
+          </div>
+
+          {/* 1. Account Export & Import Buttons */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 12 }}>
+            {/* Custom Cloud Settings Button */}
+            <button
+              onClick={() => {
+                setIsOpen(false);
+                if (onOpenCloudSettings) onOpenCloudSettings();
+              }}
+              className="btn btn-secondary btn-sm"
+              style={{ width: "100%", justifyContent: "flex-start", fontSize: "0.78rem", padding: "6px 10px", borderColor: "rgba(14, 165, 233, 0.4)" }}
+              title={t.cloudSyncTitle || "Хмарне збереження (Custom Cloud)"}
+            >
+              <Cloud size={13} color="#0ea5e9" />
+              <span>{t.cloudSyncTitle || "Хмарне збереження"}</span>
+            </button>
+
+            {/* Export Account ZIP */}
+            <button
+              onClick={handleExportAccount}
+              disabled={isExporting}
+              className="btn btn-secondary btn-sm"
+              style={{ width: "100%", justifyContent: "flex-start", fontSize: "0.78rem", padding: "6px 10px" }}
+              title={t.exportAccountDesc || "Вивантажити всі дані акаунта (роботи, дошки, замітки, налаштування) в єдиний ZIP-архів"}
+            >
+              {isExporting ? <Loader2 size={13} className="spin" /> : <DownloadCloud size={13} color="var(--accent)" />}
+              <span>{isExporting ? (t.exportingZip || "Архівування...") : (t.exportAccountBtn || "Експортувати акаунт (ZIP)")}</span>
+            </button>
+
+            {/* Import Account ZIP */}
+            <button
+              onClick={handleTriggerImport}
+              disabled={isImporting}
+              className="btn btn-secondary btn-sm"
+              style={{ width: "100%", justifyContent: "flex-start", fontSize: "0.78rem", padding: "6px 10px" }}
+              title={t.importAccountDesc || "Завантажити архів акаунта для повного відновлення або перенесення на інший пристрій"}
+            >
+              {isImporting ? <Loader2 size={13} className="spin" /> : <UploadCloud size={13} color="var(--accent)" />}
+              <span>{isImporting ? (t.importingZip || "Розпакування...") : (t.importAccountBtn || "Імпортувати акаунт (ZIP)")}</span>
+            </button>
+          </div>
+
+          {/* Status Message Alert */}
+          {statusMsg && (
+            <div style={{
+              background: "rgba(var(--accent-rgb), 0.1)",
+              border: "1px solid var(--accent)",
+              borderRadius: "var(--radius-sm)",
+              padding: "6px 8px",
+              fontSize: "0.72rem",
+              color: "var(--accent)",
+              marginBottom: 10,
+              textAlign: "center"
+            }}>
+              {statusMsg}
+            </div>
+          )}
+
           {/* Encryption status */}
           <div style={{
             background: "var(--bg-pill)",
             borderRadius: "var(--radius-md)",
-            padding: "8px 10px",
+            padding: "6px 10px",
             marginBottom: 10,
             display: "flex",
             alignItems: "center",

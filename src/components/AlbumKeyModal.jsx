@@ -27,13 +27,16 @@ export function AlbumKeyModal({
       return;
     }
 
-    // Cryptographically derive a robust, uncrackable key from Title + User + Date/Hour entropy
+    // Increment key generation count for this album
+    const currentGenCount = (album.keyGenerationCount || 0) + 1;
+
+    // Cryptographically derive a robust, uncrackable key from Title + User + Date/Hour + Generation Counter entropy
     const albumName = (album.title || "album").trim();
     const username = (currentUser ? currentUser.username : "guest").trim();
     const hourStamp = new Date().toISOString().slice(0, 13); // YYYY-MM-DDTHH
     
-    // Mix deterministic values with a CSPRNG salt buffer for maximum randomness and resistance
-    const seed = `${albumName}::${username}::${hourStamp}`;
+    // Mix deterministic values, generation counter and salt for guaranteed uniqueness each time
+    const seed = `${albumName}::${username}::${hourStamp}::gen_${currentGenCount}::ts_${Date.now()}`;
     const encoder = new TextEncoder();
     const data = encoder.encode(seed);
     
@@ -52,10 +55,11 @@ export function AlbumKeyModal({
 
     const keyHash = await hashPasswordForAuth(rawKey, "album_verify_salt");
 
-    // Save key hash to album
+    // Save key hash and incremented counter to album
     const updated = {
       ...album,
       masterKeyHash: keyHash,
+      keyGenerationCount: currentGenCount,
       isLocked: false
     };
     onSaveAlbum(updated);
@@ -359,12 +363,9 @@ export function AlbumKeyModal({
             )}
 
             <div style={{ display: "flex", gap: 10 }}>
-              <button type="submit" className="btn btn-primary" style={{ flex: 1 }}>
+              <button type="submit" className="btn btn-primary" style={{ width: "100%", padding: "11px" }}>
                 <Unlock size={14} />
                 <span>{t.unlock || "Розблокувати"}</span>
-              </button>
-              <button type="button" onClick={handleDeleteKey} className="btn btn-danger-ghost" title={t.deleteKey || "Видалити ключ"}>
-                <Trash2 size={14} />
               </button>
             </div>
 
