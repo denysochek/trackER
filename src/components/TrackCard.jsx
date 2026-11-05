@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { 
   ChevronUp, 
   ChevronDown, 
@@ -12,7 +12,10 @@ import {
   Check,
   Hash,
   Tag,
-  Users
+  Users,
+  UploadCloud,
+  FileAudio,
+  X
 } from "lucide-react";
 import { STAGES, calculateTrackScore, getTrackMaxScore, isTrackFinished } from "../constants";
 import { playStudioClick } from "../utils/soundEffects";
@@ -38,6 +41,47 @@ export function TrackCard({
   const [isExpanded, setIsExpanded] = useState(false);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [titleInput, setTitleInput] = useState(track.title);
+  const [isUploadingAudio, setIsUploadingAudio] = useState(false);
+  const fileInputRef = useRef(null);
+
+  const handleAudioFileUpload = (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+
+    // Check size limit: warning if over 25MB
+    if (file.size > 25 * 1024 * 1024) {
+      alert(t.audioTooLarge || "Файл завеликий (>25MB). Рекомендується MP3 файл до 25MB.");
+      return;
+    }
+
+    setIsUploadingAudio(true);
+    const reader = new FileReader();
+    reader.onload = (loadEvent) => {
+      const dataUrl = loadEvent.target.result;
+      onUpdateTrack({
+        ...track,
+        demoUrl: dataUrl,
+        audioFileName: file.name
+      });
+      setIsUploadingAudio(false);
+    };
+    reader.onerror = () => {
+      alert(t.audioUploadError || "Помилка читання аудіофайлу");
+      setIsUploadingAudio(false);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemoveAudio = () => {
+    onUpdateTrack({
+      ...track,
+      demoUrl: "",
+      audioFileName: ""
+    });
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
 
   const score = calculateTrackScore(track);
   const maxScore = getTrackMaxScore(track);
@@ -281,6 +325,43 @@ export function TrackCard({
                   {track.key}
                 </span>
               )}
+
+              {/* Upload audio file directly from computer button */}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="audio/*,.mp3,.wav,.ogg,.m4a,.aac,.flac"
+                onChange={handleAudioFileUpload}
+                style={{ display: "none" }}
+              />
+
+              <button
+                onClick={() => fileInputRef.current && fileInputRef.current.click()}
+                disabled={isUploadingAudio}
+                title={track.demoUrl ? (track.audioFileName || t.changeAudio || "Змінити аудіофайл") : (t.uploadAudio || "Завантажити аудіо з комп'ютера")}
+                style={{
+                  background: track.demoUrl ? "rgba(34, 197, 94, 0.12)" : "var(--bg-pill)",
+                  color: track.demoUrl ? "#22c55e" : "var(--text-secondary)",
+                  border: track.demoUrl ? "1px solid rgba(34, 197, 94, 0.35)" : "1px solid var(--border-subtle)",
+                  borderRadius: "var(--radius-full)",
+                  padding: "2px 8px",
+                  fontSize: "0.68rem",
+                  fontWeight: 600,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 4,
+                  cursor: "pointer",
+                  maxWidth: 160
+                }}
+              >
+                <UploadCloud size={10} />
+                <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {isUploadingAudio 
+                    ? "..." 
+                    : (track.audioFileName || (track.demoUrl ? (t.audioAttached || "Аудіо є") : (t.uploadAudio || "+ Завантажити")))}
+                </span>
+              </button>
+
               {track.demoUrl && (
                 <button
                   onClick={() => onPlayDemo(track)}
@@ -632,22 +713,54 @@ export function TrackCard({
             </div>
 
             <div>
-              <label style={{ fontSize: "0.74rem", color: "var(--text-muted)", marginBottom: 4, display: "block" }}>
-                {t.demoUrl}
+              <label style={{ fontSize: "0.74rem", color: "var(--text-muted)", marginBottom: 4, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span>{t.demoUrl}</span>
+                {track.demoUrl && (
+                  <button
+                    onClick={handleRemoveAudio}
+                    style={{
+                      background: "transparent",
+                      border: "none",
+                      color: "#ef4444",
+                      fontSize: "0.68rem",
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 2,
+                      padding: 0
+                    }}
+                  >
+                    <X size={10} />
+                    <span>{t.removeAudio || "Видалити"}</span>
+                  </button>
+                )}
               </label>
-              <div style={{ display: "flex", gap: 6 }}>
+              <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
                 <input
                   type="text"
-                  value={track.demoUrl || ""}
+                  value={track.demoUrl?.startsWith("data:") ? (track.audioFileName || "Локальний файл (в пам'яті)") : (track.demoUrl || "")}
                   placeholder="https://... (mp3/audio)"
-                  onChange={(e) => onUpdateTrack({ ...track, demoUrl: e.target.value })}
+                  disabled={track.demoUrl?.startsWith("data:")}
+                  onChange={(e) => onUpdateTrack({ ...track, demoUrl: e.target.value, audioFileName: "" })}
                   className="input"
                 />
+
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current && fileInputRef.current.click()}
+                  className="btn btn-secondary"
+                  style={{ padding: "0 10px", height: 34, whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: 5, fontSize: "0.76rem" }}
+                  title="Завантажити файл з комп'ютера"
+                >
+                  <UploadCloud size={13} color="var(--accent)" />
+                  <span>{track.demoUrl?.startsWith("data:") ? "Замінити" : "З диска"}</span>
+                </button>
+
                 {track.demoUrl && (
                   <button
                     onClick={() => onPlayDemo(track)}
                     className="btn btn-secondary"
-                    style={{ padding: "0 10px" }}
+                    style={{ padding: "0 10px", height: 34 }}
                   >
                     {isCurrentlyPlaying ? <Pause size={13} /> : <Play size={13} />}
                   </button>
