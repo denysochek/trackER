@@ -1,4 +1,9 @@
-// High precision Web Audio Metronome with Live, Fruity, Logic-style Click, Hi-Hat / Cymbal & Cowbell Presets
+// High precision Web Audio Metronome with authentic DAW sound modeling:
+// - Live: Default Ableton pure sine blip / beep (2000Hz accent, 1000Hz regular, ultra-short clean)
+// - Fruity: Default FL Studio woodblock click / клацаюче дерево (resonant bandpassed dual click)
+// - Knock: Logic Pro Klopfgeist style punchy low wood knock
+// - Cymbal: 909-style sizzle / closed hat
+// - 808 Bell: Authentic Roland TR-808 cowbell, tuned dual square waves with natural decay
 
 let audioCtx = null;
 
@@ -18,7 +23,7 @@ function getMetronomeAudioContext() {
 /**
  * Play a single metronome click at an exact scheduled time (or right now)
  * @param {boolean} isAccent - Whether this is the downbeat (first beat of the bar)
- * @param {'live'|'fruity'|'logic'|'cymbal'|'cowbell'} preset - Sound design preset
+ * @param {'live'|'fruity'|'knock'|'logic'|'cymbal'|'cowbell'} preset - Sound design preset
  * @param {number} [time] - Web Audio precise time (defaults to currentTime)
  * @param {number} [volume] - Volume multiplier (0.0 to 1.5, default 1.0)
  */
@@ -35,20 +40,60 @@ export function playMetronomeClick(isAccent = false, preset = 'live', time = nul
   masterGain.connect(ctx.destination);
 
   if (preset === 'fruity') {
-    // FRUITY (FL-style)
-    // Woodblock / synth percussion blip with pitch drop
+    // FRUITY (FL STUDIO DEFAULT CLICK):
+    // Автентичне клацаюче сухе дерево (Woodblock):
+    // 1. Різкий дерев'яний транзієнт (клацання)
+    // 2. Резонансний дерев'яний корпус із швидким затуханням (~15-22ms)
+    const baseFreq = isAccent ? 2400 : 1600;
+
+    // Body oscillator (Wood tap)
+    const bodyOsc = ctx.createOscillator();
+    const bodyGain = ctx.createGain();
+    bodyOsc.type = 'triangle';
+    bodyOsc.frequency.setValueAtTime(baseFreq, t);
+    bodyOsc.frequency.exponentialRampToValueAtTime(baseFreq * 0.45, t + 0.016);
+
+    bodyGain.gain.setValueAtTime(isAccent ? 0.95 : 0.75, t);
+    bodyGain.gain.exponentialRampToValueAtTime(0.0001, t + 0.018);
+
+    // Click snap transient (Різкий "клац")
+    const snapOsc = ctx.createOscillator();
+    const snapGain = ctx.createGain();
+    snapOsc.type = 'sine';
+    snapOsc.frequency.setValueAtTime(isAccent ? 4800 : 3400, t);
+    snapOsc.frequency.exponentialRampToValueAtTime(800, t + 0.006);
+
+    snapGain.gain.setValueAtTime(isAccent ? 0.9 : 0.7, t);
+    snapGain.gain.exponentialRampToValueAtTime(0.0001, t + 0.007);
+
+    bodyOsc.connect(bodyGain);
+    bodyGain.connect(masterGain);
+
+    snapOsc.connect(snapGain);
+    snapGain.connect(masterGain);
+
+    bodyOsc.start(t);
+    snapOsc.start(t);
+    bodyOsc.stop(t + 0.022);
+    snapOsc.stop(t + 0.01);
+
+  } else if (preset === 'knock' || preset === 'logic') {
+    // KNOCK (LOGIC PRO KLOPFGEIST):
+    // Низькочастотний щільний глухий стук без високого пікання
+    // Акцент: ~460Hz -> 110Hz, щільний бас-стук
+    // Звичайний біт: ~310Hz -> 90Hz
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
 
-    osc.type = 'triangle';
-    const startFreq = isAccent ? 2200 : 1350;
-    const endFreq = isAccent ? 900 : 550;
+    osc.type = 'sine';
+    const startFreq = isAccent ? 520 : 340;
+    const endFreq = isAccent ? 140 : 95;
 
     osc.frequency.setValueAtTime(startFreq, t);
     osc.frequency.exponentialRampToValueAtTime(endFreq, t + 0.035);
 
-    gain.gain.setValueAtTime(isAccent ? 0.85 : 0.65, t);
-    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.045);
+    gain.gain.setValueAtTime(isAccent ? 1.0 : 0.8, t);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.045);
 
     osc.connect(gain);
     gain.connect(masterGain);
@@ -56,32 +101,47 @@ export function playMetronomeClick(isAccent = false, preset = 'live', time = nul
     osc.start(t);
     osc.stop(t + 0.05);
 
-  } else if (preset === 'logic') {
-    // LOGIC-STYLE LOW WOOD CLICK / LOW-FREQ KNOCK (Низькочастотний стук / Logic Klopfgeist)
-    // Downbeat: punchy low wood click around 800Hz dropping to 180Hz with sine body
-    // Regular beat: warm low knock around 480Hz dropping to 140Hz
-    const osc = ctx.createOscillator();
+  } else if (preset === 'cowbell') {
+    // 808 BELL:
+    // Класичний TR-808 Cowbell — дві налаштовані квадратні хвилі
+    // (540Hz + 800Hz), пропущені через вузький bandpass фільтр.
+    // Трохи довший ніж супер-сухий клік (приблизно ~90-110ms),
+    // але короткий і чіткий (decay ~0.09s).
+    const osc1 = ctx.createOscillator();
+    const osc2 = ctx.createOscillator();
     const gain = ctx.createGain();
+    const bandpass = ctx.createBiquadFilter();
 
-    osc.type = 'sine';
-    const startFreq = isAccent ? 920 : 520;
-    const endFreq = isAccent ? 220 : 130;
+    osc1.type = 'square';
+    osc2.type = 'square';
 
-    osc.frequency.setValueAtTime(startFreq, t);
-    osc.frequency.exponentialRampToValueAtTime(endFreq, t + 0.04);
+    // 808 Cowbell fundamental frequencies: 540Hz and 800Hz
+    const f1 = isAccent ? 620 : 540;
+    const f2 = isAccent ? 920 : 800;
+    osc1.frequency.setValueAtTime(f1, t);
+    osc2.frequency.setValueAtTime(f2, t);
 
-    gain.gain.setValueAtTime(isAccent ? 0.95 : 0.75, t);
-    gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.06);
+    bandpass.type = 'bandpass';
+    bandpass.frequency.setValueAtTime(isAccent ? 1080 : 920, t);
+    bandpass.Q.setValueAtTime(3.2, t);
 
-    osc.connect(gain);
+    const decayDuration = isAccent ? 0.11 : 0.09; // Зроблено на каплю довшим (відчувається як ковбел)
+    gain.gain.setValueAtTime(isAccent ? 0.85 : 0.65, t);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + decayDuration);
+
+    osc1.connect(bandpass);
+    osc2.connect(bandpass);
+    bandpass.connect(gain);
     gain.connect(masterGain);
 
-    osc.start(t);
-    osc.stop(t + 0.065);
+    osc1.start(t);
+    osc2.start(t);
+    osc1.stop(t + decayDuration + 0.01);
+    osc2.stop(t + decayDuration + 0.01);
 
   } else if (preset === 'cymbal') {
-    // CYMBAL / HI-HAT (Тарілка / Відкритий або закритий хет)
-    // Filtered white noise with rapid decay
+    // CYMBAL / HI-HAT:
+    // Швидкий хет / тарілка з високою фільтрацією
     const bufferSize = ctx.sampleRate * 0.08;
     const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
     const data = buffer.getChannelData(0);
@@ -92,13 +152,12 @@ export function playMetronomeClick(isAccent = false, preset = 'live', time = nul
     const noiseSource = ctx.createBufferSource();
     noiseSource.buffer = buffer;
 
-    // Highpass filter for crisp cymbal sizzle
     const filter = ctx.createBiquadFilter();
     filter.type = 'highpass';
-    filter.frequency.setValueAtTime(isAccent ? 6500 : 8000, t);
+    filter.frequency.setValueAtTime(isAccent ? 7000 : 8500, t);
 
     const gain = ctx.createGain();
-    const duration = isAccent ? 0.075 : 0.04;
+    const duration = isAccent ? 0.065 : 0.038;
     gain.gain.setValueAtTime(isAccent ? 0.85 : 0.55, t);
     gain.gain.exponentialRampToValueAtTime(0.0001, t + duration);
 
@@ -109,53 +168,27 @@ export function playMetronomeClick(isAccent = false, preset = 'live', time = nul
     noiseSource.start(t);
     noiseSource.stop(t + duration + 0.01);
 
-  } else if (preset === 'cowbell') {
-    // 808 COWBELL STYLE (Металевий ковбелл)
-    const osc1 = ctx.createOscillator();
-    const osc2 = ctx.createOscillator();
-    const gain = ctx.createGain();
-    const bandpass = ctx.createBiquadFilter();
-
-    osc1.type = 'square';
-    osc2.type = 'square';
-    osc1.frequency.setValueAtTime(isAccent ? 840 : 540, t);
-    osc2.frequency.setValueAtTime(isAccent ? 1260 : 800, t);
-
-    bandpass.type = 'bandpass';
-    bandpass.frequency.setValueAtTime(isAccent ? 1000 : 700, t);
-    bandpass.Q.setValueAtTime(2.5, t);
-
-    gain.gain.setValueAtTime(isAccent ? 0.8 : 0.6, t);
-    gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.06);
-
-    osc1.connect(bandpass);
-    osc2.connect(bandpass);
-    bandpass.connect(gain);
-    gain.connect(masterGain);
-
-    osc1.start(t);
-    osc2.start(t);
-    osc1.stop(t + 0.07);
-    osc2.stop(t + 0.07);
-
   } else {
-    // LIVE (Ableton-style default)
-    // Classic pure Sine blip with very sharp click transient
+    // LIVE (ABLETON DEFAULT BEEP / CLICK):
+    // Дефолтний Ableton метроном — чистий пікаючий сінус високої частоти:
+    // Downbeat (accent): ~2000Hz чистий пік
+    // Regular beats: ~1000Hz чистий пік
+    // Дуже короткий огинач (~20ms), чистий цифровий BEEP
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
 
     osc.type = 'sine';
-    const freq = isAccent ? 1600 : 800;
+    const freq = isAccent ? 2040 : 1020; // Точні частоти Ableton Live click
     osc.frequency.setValueAtTime(freq, t);
 
-    gain.gain.setValueAtTime(isAccent ? 0.9 : 0.6, t);
-    gain.gain.exponentialRampToValueAtTime(0.0001, t + (isAccent ? 0.03 : 0.025));
+    gain.gain.setValueAtTime(isAccent ? 0.95 : 0.65, t);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + (isAccent ? 0.024 : 0.018));
 
     osc.connect(gain);
     gain.connect(masterGain);
 
     osc.start(t);
-    osc.stop(t + 0.035);
+    osc.stop(t + 0.03);
   }
 }
 
@@ -166,7 +199,7 @@ export function playMetronomeClick(isAccent = false, preset = 'live', time = nul
 export class MetronomeEngine {
   constructor(onBeatTick) {
     this.bpm = 120;
-    this.preset = 'live'; // 'live' | 'fruity' | 'logic' | 'cymbal' | 'cowbell'
+    this.preset = 'live'; // 'live' | 'fruity' | 'knock' | 'cymbal' | 'cowbell'
     this.volume = 1.0; // 0.0 to 1.5 (150%)
     this.isPlaying = false;
     this.currentBeat = 0; // 0, 1, 2, 3
@@ -185,8 +218,8 @@ export class MetronomeEngine {
   }
 
   setPreset(newPreset) {
-    const valid = ['live', 'fruity', 'logic', 'cymbal', 'cowbell'];
-    this.preset = valid.includes(newPreset) ? newPreset : 'live';
+    const valid = ['live', 'fruity', 'knock', 'logic', 'cymbal', 'cowbell'];
+    this.preset = valid.includes(newPreset) ? (newPreset === 'logic' ? 'knock' : newPreset) : 'live';
   }
 
   setVolume(newVolume) {

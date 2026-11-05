@@ -6,7 +6,7 @@ export function MetronomeWidget({ t }) {
   const [isOpen, setIsOpen] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [bpm, setBpm] = useState(120);
-  const [preset, setPreset] = useState('live'); // 'live' | 'fruity' | 'logic' | 'cymbal' | 'cowbell'
+  const [preset, setPreset] = useState('live'); // 'live' | 'fruity' | 'knock' | 'cymbal' | 'cowbell'
   const [volume, setVolume] = useState(1.0); // 0.0 - 1.5 (150%)
   const [currentBeat, setCurrentBeat] = useState(0);
 
@@ -73,7 +73,7 @@ export function MetronomeWidget({ t }) {
   const soundPresets = [
     { id: 'live', name: 'Live' },
     { id: 'fruity', name: 'Fruity' },
-    { id: 'logic', name: 'Logic Knock' },
+    { id: 'knock', name: 'Knock' },
     { id: 'cymbal', name: 'Cymbal' },
     { id: 'cowbell', name: '808 Bell' },
   ];
