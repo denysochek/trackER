@@ -86,17 +86,19 @@ export function MetronomeWidget({ t }) {
         alignItems: 'center',
         background: 'var(--bg-pill)',
         borderRadius: 'var(--radius-full)',
-        padding: '2px 4px',
+        padding: '0 4px',
         border: '1px solid var(--border-medium)',
-        whiteSpace: 'nowrap'
+        whiteSpace: 'nowrap',
+        height: 32,
+        boxSizing: 'border-box'
       }}>
         <button
           onClick={handleTogglePlay}
           className={`btn btn-sm ${isPlaying ? 'btn-primary' : 'btn-ghost'}`}
           style={{
-            padding: '3px 8px',
+            padding: '0 8px',
             fontSize: '0.78rem',
-            height: 28,
+            height: 24,
             borderRadius: 'var(--radius-full)',
             display: 'flex',
             alignItems: 'center',

@@ -335,12 +335,12 @@ export function Header({
           <div style={{ width: 1, height: 18, background: 'var(--border-subtle)' }} />
 
           {/* Home / Studio View Switcher */}
-          <div className="segmented-control" style={{ flexShrink: 0 }}>
+          <div className="segmented-control" style={{ flexShrink: 0, height: 32, boxSizing: 'border-box' }}>
             <button
               onClick={() => setCurrentView && setCurrentView('home')}
               className={`segmented-control-btn ${currentView === 'home' ? 'active' : ''}`}
               title={t.navHome || 'Головна'}
-              style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: '0.78rem', padding: '3px 9px' }}
+              style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: '0.78rem', padding: '0 10px', height: '100%' }}
             >
               <Home size={13} />
               <span>{t.navHome || 'Головна'}</span>
@@ -349,7 +349,7 @@ export function Header({
               onClick={() => setCurrentView && setCurrentView('studio')}
               className={`segmented-control-btn ${currentView === 'studio' ? 'active' : ''}`}
               title={t.navStudio || 'Студія'}
-              style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: '0.78rem', padding: '3px 9px' }}
+              style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: '0.78rem', padding: '0 10px', height: '100%' }}
             >
               <Disc3 size={13} />
               <span>{t.navStudio || 'Студія'}</span>
@@ -358,16 +358,24 @@ export function Header({
 
           <div style={{ width: 1, height: 18, background: 'var(--border-subtle)' }} />
 
-          {/* Album Selector Dropdown & 3. Import Album Button */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+          {/* Album Selector Dropdown (with New Album & Import Album inside) */}
+          <div style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
             <div ref={albumDropdownRef} style={{ position: 'relative' }}>
               <button
                 onClick={() => setShowAlbumMenu(!showAlbumMenu)}
                 className="btn btn-secondary btn-sm"
-                style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '4px 8px' }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  padding: '0 10px',
+                  height: 32,
+                  boxSizing: 'border-box',
+                  borderRadius: 'var(--radius-full)'
+                }}
               >
                 <Layers size={13} color="var(--accent)" />
-                <span style={{ maxWidth: 110, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: 600 }}>
+                <span style={{ maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: 600 }}>
                   {currentAlbum ? currentAlbum.title : t.selectAlbum}
                 </span>
                 <ChevronDown size={12} color="var(--text-muted)" />
@@ -436,7 +444,7 @@ export function Header({
                       {t.newAlbum}
                     </button>
                     
-                    {/* Import Album option in dropdown */}
+                    {/* Import Album option beside New Album in dropdown */}
                     <button
                       onClick={() => {
                         setShowAlbumMenu(false);
@@ -452,19 +460,6 @@ export function Header({
                 </div>
               )}
             </div>
-
-            {/* 3. Dedicated "Import Album" Button directly beside New Album / Selector */}
-            <button
-              onClick={() => {
-                if (albumFileInputRef.current) albumFileInputRef.current.click();
-              }}
-              className="btn btn-secondary btn-sm"
-              style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '4px 9px' }}
-              title={t.importAlbumDesc || "Завантажити файл або ZIP-архів альбому"}
-            >
-              <Upload size={13} color="var(--accent)" />
-              <span style={{ fontSize: '0.78rem', fontWeight: 600 }}>{t.importAlbumBtn || "Імпорт альбому"}</span>
-            </button>
           </div>
 
         </div>
@@ -502,12 +497,12 @@ export function Header({
             <button
               onClick={() => setShowAccentMenu(!showAccentMenu)}
               className="btn btn-secondary btn-icon btn-sm"
-              style={{ width: 34, height: 34 }}
+              style={{ width: 32, height: 32, borderRadius: 'var(--radius-full)', padding: 0 }}
               title={t.accentColor}
             >
               <div style={{
-                width: 16,
-                height: 16,
+                width: 15,
+                height: 15,
                 borderRadius: '50%',
                 background: 'var(--accent)',
                 border: '1.5px solid var(--bg-card)',
@@ -574,11 +569,12 @@ export function Header({
           </div>
 
           {/* Light / Dark Mode Toggle */}
-          <div className="segmented-control">
+          <div className="segmented-control" style={{ height: 32, boxSizing: 'border-box' }}>
             <button
               onClick={() => setTheme('light')}
               className={`segmented-control-btn ${theme === 'light' ? 'active' : ''}`}
               title={t.themeLight}
+              style={{ height: '100%', padding: '0 8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
             >
               <Sun size={13} />
             </button>
@@ -586,22 +582,25 @@ export function Header({
               onClick={() => setTheme('dark')}
               className={`segmented-control-btn ${theme === 'dark' ? 'active' : ''}`}
               title={t.themeDark}
+              style={{ height: '100%', padding: '0 8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
             >
               <Moon size={13} />
             </button>
           </div>
 
           {/* Language Switcher Pill */}
-          <div className="segmented-control">
+          <div className="segmented-control" style={{ height: 32, boxSizing: 'border-box' }}>
             <button
               onClick={() => setLang('uk')}
               className={`segmented-control-btn ${lang === 'uk' ? 'active' : ''}`}
+              style={{ height: '100%', padding: '0 10px', fontSize: '0.76rem', fontWeight: 600 }}
             >
               UA
             </button>
             <button
               onClick={() => setLang('en')}
               className={`segmented-control-btn ${lang === 'en' ? 'active' : ''}`}
+              style={{ height: '100%', padding: '0 10px', fontSize: '0.76rem', fontWeight: 600 }}
             >
               EN
             </button>

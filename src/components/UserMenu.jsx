@@ -118,7 +118,9 @@ export function UserMenu({
           display: "flex",
           alignItems: "center",
           gap: 7,
-          padding: "4px 10px",
+          padding: "0 10px",
+          height: 32,
+          boxSizing: "border-box",
           borderRadius: "var(--radius-full)"
         }}
       >
