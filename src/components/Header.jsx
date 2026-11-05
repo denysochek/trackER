@@ -236,28 +236,29 @@ export function Header({
       />
 
       <div style={{
-        maxWidth: 1360,
+        maxWidth: 1440,
         margin: '0 auto',
-        padding: '12px 20px',
+        padding: '8px 16px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        gap: 16,
-        flexWrap: 'wrap'
+        gap: 10,
+        flexWrap: 'nowrap',
+        overflowX: 'auto'
       }}>
         
         {/* Brand & Spinning Interactive Vinyl */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
           
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             {/* Turntable spindle container */}
             <div
               ref={turntableRef}
               onMouseDown={handleMouseDown}
               onTouchStart={handleTouchStart}
               style={{
-                width: 38,
-                height: 38,
+                width: 34,
+                height: 34,
                 borderRadius: '50%',
                 background: isVinylEjected ? 'var(--bg-pill)' : 'var(--accent)',
                 border: isVinylEjected ? '2px dashed var(--border-medium)' : '2px solid var(--border-subtle)',
@@ -269,7 +270,8 @@ export function Header({
                 boxShadow: isVinylEjected ? 'none' : 'var(--shadow-sm)',
                 transition: 'border 0.25s ease, background 0.25s ease',
                 userSelect: 'none',
-                touchAction: 'none'
+                touchAction: 'none',
+                flexShrink: 0
               }}
               title={
                 isVinylEjected
@@ -291,7 +293,7 @@ export function Header({
                   className={!isScratching ? 'vinyl-spinning' : ''}
                 >
                   <Disc3
-                    size={26}
+                    size={22}
                     color="var(--text-on-accent)"
                   />
                 </div>
@@ -299,26 +301,26 @@ export function Header({
             </div>
 
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <span style={{ fontSize: '1.18rem', fontWeight: 700, letterSpacing: '-0.02em', color: 'var(--text-primary)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                <span style={{ fontSize: '1.1rem', fontWeight: 700, letterSpacing: '-0.02em', color: 'var(--text-primary)' }}>
                   track<span style={{ color: 'var(--accent)' }}>ER</span>
                 </span>
-                <span className="pill" style={{ fontSize: '0.65rem', padding: '1px 7px', textTransform: 'lowercase', fontWeight: 600 }}>
+                <span className="pill" style={{ fontSize: '0.62rem', padding: '1px 6px', textTransform: 'lowercase', fontWeight: 600 }}>
                   {currentUser ? (currentUser.username || currentUser.artistName) : 'guest'}
                 </span>
               </div>
             </div>
           </div>
 
-          <div style={{ width: 1, height: 20, background: 'var(--border-subtle)' }} />
+          <div style={{ width: 1, height: 18, background: 'var(--border-subtle)' }} />
 
           {/* Home / Studio View Switcher */}
-          <div className="segmented-control">
+          <div className="segmented-control" style={{ flexShrink: 0 }}>
             <button
               onClick={() => setCurrentView && setCurrentView('home')}
               className={`segmented-control-btn ${currentView === 'home' ? 'active' : ''}`}
               title={t.navHome || 'Головна'}
-              style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: '0.78rem', padding: '3px 10px' }}
+              style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: '0.78rem', padding: '3px 9px' }}
             >
               <Home size={13} />
               <span>{t.navHome || 'Головна'}</span>
@@ -327,17 +329,17 @@ export function Header({
               onClick={() => setCurrentView && setCurrentView('studio')}
               className={`segmented-control-btn ${currentView === 'studio' ? 'active' : ''}`}
               title={t.navStudio || 'Студія'}
-              style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: '0.78rem', padding: '3px 10px' }}
+              style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: '0.78rem', padding: '3px 9px' }}
             >
               <Disc3 size={13} />
               <span>{t.navStudio || 'Студія'}</span>
             </button>
           </div>
 
-          <div style={{ width: 1, height: 20, background: 'var(--border-subtle)' }} />
+          <div style={{ width: 1, height: 18, background: 'var(--border-subtle)' }} />
 
           {/* Album Selector Dropdown & 3. Import Album Button */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
             <div style={{ position: 'relative' }}>
               <button
                 onClick={() => setShowAlbumMenu(!showAlbumMenu)}
@@ -448,7 +450,7 @@ export function Header({
         </div>
 
         {/* Right Tools: Metronome, Collab indicator, Accent picker, Light/Dark, Language, User Auth */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'nowrap', flexShrink: 0 }}>
           
           {/* 5. Metronome in Top Bar (Ableton & FL Studio) */}
           <MetronomeWidget t={t} />

@@ -6,7 +6,8 @@ export function MetronomeWidget({ t }) {
   const [isOpen, setIsOpen] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [bpm, setBpm] = useState(120);
-  const [preset, setPreset] = useState('ableton'); // 'ableton' | 'fl'
+  const [preset, setPreset] = useState('live'); // 'live' | 'fruity' | 'logic' | 'cymbal' | 'cowbell'
+  const [volume, setVolume] = useState(1.0); // 0.0 - 1.5 (150%)
   const [currentBeat, setCurrentBeat] = useState(0);
 
   const engineRef = useRef(null);
@@ -48,6 +49,14 @@ export function MetronomeWidget({ t }) {
     }
   };
 
+  const handleVolumeChange = (newVol) => {
+    const val = Math.max(0, Math.min(1.5, parseFloat(newVol) || 1.0));
+    setVolume(val);
+    if (engineRef.current) {
+      engineRef.current.setVolume(val);
+    }
+  };
+
   // Close menu on click outside
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -61,10 +70,26 @@ export function MetronomeWidget({ t }) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isOpen]);
 
+  const soundPresets = [
+    { id: 'live', name: 'Live' },
+    { id: 'fruity', name: 'Fruity' },
+    { id: 'logic', name: 'Logic Knock' },
+    { id: 'cymbal', name: 'Cymbal' },
+    { id: 'cowbell', name: '808 Bell' },
+  ];
+
   return (
     <div ref={dropdownRef} style={{ position: 'relative' }}>
       {/* Metronome Quick Toggle Button in Header */}
-      <div style={{ display: 'flex', alignItems: 'center', background: 'var(--bg-pill)', borderRadius: 'var(--radius-full)', padding: '2px 4px', border: '1px solid var(--border-medium)' }}>
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        background: 'var(--bg-pill)',
+        borderRadius: 'var(--radius-full)',
+        padding: '2px 4px',
+        border: '1px solid var(--border-medium)',
+        whiteSpace: 'nowrap'
+      }}>
         <button
           onClick={handleTogglePlay}
           className={`btn btn-sm ${isPlaying ? 'btn-primary' : 'btn-ghost'}`}
@@ -124,7 +149,7 @@ export function MetronomeWidget({ t }) {
           position: 'absolute',
           top: 'calc(100% + 8px)',
           right: 0,
-          width: 250,
+          width: 270,
           background: 'var(--bg-card)',
           border: '1px solid var(--border-medium)',
           borderRadius: 'var(--radius-lg)',
@@ -141,7 +166,7 @@ export function MetronomeWidget({ t }) {
           </div>
 
           {/* BPM Slider & Steppers */}
-          <div style={{ marginBottom: 14 }}>
+          <div style={{ marginBottom: 12 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
               <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Темп (BPM):</span>
               <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -189,26 +214,60 @@ export function MetronomeWidget({ t }) {
             />
           </div>
 
-          {/* Sound Presets: Ableton vs FL Studio */}
-          <div style={{ marginBottom: 12 }}>
+          {/* Volume Control: 0 to 150% */}
+          <div style={{ marginBottom: 14 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: 4 }}>
+                <Volume2 size={12} />
+                {t.volume || 'Гучність'}:
+              </span>
+              <span style={{ fontSize: '0.78rem', fontWeight: 700, fontFamily: 'monospace', color: volume > 1.0 ? '#f59e0b' : 'var(--text-primary)' }}>
+                {Math.round(volume * 100)}%
+              </span>
+            </div>
+            <input
+              type="range"
+              min="0"
+              max="1.5"
+              step="0.05"
+              value={volume}
+              onChange={(e) => handleVolumeChange(e.target.value)}
+              style={{ width: '100%', accentColor: volume > 1.0 ? '#f59e0b' : 'var(--accent)', cursor: 'pointer' }}
+            />
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.62rem', color: 'var(--text-muted)', marginTop: 2 }}>
+              <span>0%</span>
+              <span>100%</span>
+              <span style={{ color: '#f59e0b', fontWeight: 600 }}>150% (Boost)</span>
+            </div>
+          </div>
+
+          {/* Sound Presets */}
+          <div style={{ marginBottom: 14 }}>
             <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', display: 'block', marginBottom: 6, fontWeight: 600 }}>
               {t.metronomeSound || 'Звук метронома'}:
             </span>
-            <div className="segmented-control" style={{ width: '100%' }}>
-              <button
-                onClick={() => handlePresetChange('ableton')}
-                className={`segmented-control-btn ${preset === 'ableton' ? 'active' : ''}`}
-                style={{ flex: 1, padding: '5px 8px', fontSize: '0.75rem', fontWeight: 600 }}
-              >
-                Ableton Live
-              </button>
-              <button
-                onClick={() => handlePresetChange('fl')}
-                className={`segmented-control-btn ${preset === 'fl' ? 'active' : ''}`}
-                style={{ flex: 1, padding: '5px 8px', fontSize: '0.75rem', fontWeight: 600 }}
-              >
-                FL Studio
-              </button>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 4 }}>
+              {soundPresets.map(sp => (
+                <button
+                  key={sp.id}
+                  onClick={() => handlePresetChange(sp.id)}
+                  style={{
+                    padding: '5px 8px',
+                    fontSize: '0.73rem',
+                    fontWeight: 600,
+                    borderRadius: 'var(--radius-sm)',
+                    border: '1px solid',
+                    borderColor: preset === sp.id ? 'var(--accent)' : 'var(--border-subtle)',
+                    background: preset === sp.id ? 'var(--accent-subtle)' : 'var(--bg-pill)',
+                    color: preset === sp.id ? 'var(--accent)' : 'var(--text-secondary)',
+                    cursor: 'pointer',
+                    textAlign: 'center',
+                    transition: 'all 0.15s ease'
+                  }}
+                >
+                  {sp.name}
+                </button>
+              ))}
             </div>
           </div>
 
@@ -235,4 +294,3 @@ export function MetronomeWidget({ t }) {
     </div>
   );
 }
-
