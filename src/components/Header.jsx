@@ -53,6 +53,26 @@ export function Header({
   const [showAccentMenu, setShowAccentMenu] = useState(false);
   const [isScratching, setIsScratching] = useState(false);
   const albumFileInputRef = useRef(null);
+  const albumDropdownRef = useRef(null);
+  const accentDropdownRef = useRef(null);
+
+  // Close dropdowns on click outside
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (albumDropdownRef.current && !albumDropdownRef.current.contains(e.target)) {
+        setShowAlbumMenu(false);
+      }
+      if (accentDropdownRef.current && !accentDropdownRef.current.contains(e.target)) {
+        setShowAccentMenu(false);
+      }
+    };
+    if (showAlbumMenu || showAccentMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showAlbumMenu, showAccentMenu]);
 
   // Scratch tracker refs for accurate physical rotation and drag tracking
   const turntableRef = useRef(null);
@@ -223,7 +243,7 @@ export function Header({
       borderBottom: '1px solid var(--border-subtle)',
       position: 'sticky',
       top: 0,
-      zIndex: 50,
+      zIndex: 100,
       backdropFilter: 'blur(12px)',
       width: '100%'
     }}>
@@ -340,7 +360,7 @@ export function Header({
 
           {/* Album Selector Dropdown & 3. Import Album Button */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
-            <div style={{ position: 'relative' }}>
+            <div ref={albumDropdownRef} style={{ position: 'relative' }}>
               <button
                 onClick={() => setShowAlbumMenu(!showAlbumMenu)}
                 className="btn btn-secondary btn-sm"
@@ -365,7 +385,7 @@ export function Header({
                     borderRadius: 'var(--radius-lg)',
                     boxShadow: 'var(--shadow-modal)',
                     padding: '6px',
-                    zIndex: 60
+                    zIndex: 110
                   }}
                 >
                   <div style={{ padding: '6px 10px', fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
@@ -478,7 +498,7 @@ export function Header({
           )}
 
           {/* M3 Accent Color Selector */}
-          <div style={{ position: 'relative' }}>
+          <div ref={accentDropdownRef} style={{ position: 'relative' }}>
             <button
               onClick={() => setShowAccentMenu(!showAccentMenu)}
               className="btn btn-secondary btn-icon btn-sm"
