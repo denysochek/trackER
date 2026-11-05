@@ -224,7 +224,8 @@ export function Header({
       position: 'sticky',
       top: 0,
       zIndex: 50,
-      backdropFilter: 'blur(12px)'
+      backdropFilter: 'blur(12px)',
+      width: '100%'
     }}>
       {/* Hidden file input for single album import */}
       <input
@@ -242,9 +243,8 @@ export function Header({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        gap: 10,
-        flexWrap: 'nowrap',
-        overflowX: 'auto'
+        gap: 8,
+        flexWrap: 'nowrap'
       }}>
         
         {/* Brand & Spinning Interactive Vinyl */}
@@ -344,13 +344,13 @@ export function Header({
               <button
                 onClick={() => setShowAlbumMenu(!showAlbumMenu)}
                 className="btn btn-secondary btn-sm"
-                style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+                style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '4px 8px' }}
               >
-                <Layers size={14} color="var(--accent)" />
-                <span style={{ maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: 600 }}>
+                <Layers size={13} color="var(--accent)" />
+                <span style={{ maxWidth: 110, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: 600 }}>
                   {currentAlbum ? currentAlbum.title : t.selectAlbum}
                 </span>
-                <ChevronDown size={13} color="var(--text-muted)" />
+                <ChevronDown size={12} color="var(--text-muted)" />
               </button>
 
               {showAlbumMenu && (
