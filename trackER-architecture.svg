@@ -1,0 +1,212 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 820" width="100%" height="100%" style="background:#0f1117; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+  <defs>
+    <!-- Gradients -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#141824"/>
+      <stop offset="100%" stop-color="#0b0d13"/>
+    </linearGradient>
+
+    <linearGradient id="clientGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#1e2436"/>
+      <stop offset="100%" stop-color="#232a3e"/>
+    </linearGradient>
+
+    <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6366f1"/>
+      <stop offset="100%" stop-color="#4f46e5"/>
+    </linearGradient>
+
+    <linearGradient id="audioGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ec4899"/>
+      <stop offset="100%" stop-color="#be185d"/>
+    </linearGradient>
+
+    <linearGradient id="storageGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10b981"/>
+      <stop offset="100%" stop-color="#047857"/>
+    </linearGradient>
+
+    <linearGradient id="wsGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0ea5e9"/>
+      <stop offset="100%" stop-color="#0284c7"/>
+    </linearGradient>
+
+    <linearGradient id="cloudGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f59e0b"/>
+      <stop offset="100%" stop-color="#d97706"/>
+    </linearGradient>
+
+    <!-- Filters for drop shadows -->
+    <filter id="shadow" x="-5%" y="-5%" width="110%" height="115%">
+      <feDropShadow dx="0" dy="6" stdDeviation="8" flood-color="#000000" flood-opacity="0.45"/>
+    </filter>
+
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="3" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+
+    <!-- Marker arrows -->
+    <marker id="arrowIndigo" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 8 5 L 0 9 z" fill="#818cf8"/>
+    </marker>
+    <marker id="arrowGreen" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 8 5 L 0 9 z" fill="#34d399"/>
+    </marker>
+    <marker id="arrowBlue" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 8 5 L 0 9 z" fill="#38bdf8"/>
+    </marker>
+    <marker id="arrowAmber" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 8 5 L 0 9 z" fill="#fbbf24"/>
+    </marker>
+  </defs>
+
+  <!-- Title & Subtitle -->
+  <g transform="translate(40, 40)">
+    <rect x="0" y="0" width="10" height="32" rx="4" fill="#6366f1" />
+    <text x="22" y="24" fill="#ffffff" font-size="22" font-weight="800" letter-spacing="-0.02em">trackER — Схема Архітектури та Маршрутизації</text>
+    <text x="24" y="44" fill="#94a3b8" font-size="12" font-weight="500">Client Runtime, Audio Synthesis, WebSockets Relay &amp; Local Vaults</text>
+  </g>
+
+  <!-- ================= CLIENT CONTAINER ================= -->
+  <rect x="40" y="100" width="1020" height="370" rx="16" fill="url(#clientGrad)" stroke="#334155" stroke-width="1.5" filter="url(#shadow)" />
+  <rect x="40" y="100" width="1020" height="38" rx="16" fill="#1e293b" />
+  <!-- Window decorative dots -->
+  <circle cx="65" cy="119" r="5" fill="#ef4444" />
+  <circle cx="82" cy="119" r="5" fill="#f59e0b" />
+  <circle cx="99" cy="119" r="5" fill="#10b981" />
+  <text x="120" y="123" fill="#cbd5e1" font-size="13" font-weight="700">CLIENT RUNTIME (React 19 + Web Audio + Vite SPA)</text>
+
+  <!-- 4 Interactive Client Modules -->
+  <!-- 1. Header & Metronome -->
+  <g transform="translate(65, 160)">
+    <rect width="215" height="110" rx="10" fill="#0f172a" stroke="#475569" stroke-width="1.2" />
+    <rect width="215" height="4" rx="2" fill="url(#audioGrad)" />
+    <text x="14" y="26" fill="#f43f5e" font-size="13" font-weight="700">Метроном &amp; Шапка</text>
+    <text x="14" y="44" fill="#94a3b8" font-size="10.5">• Ableton (Sine 1600/800Hz)</text>
+    <text x="14" y="60" fill="#94a3b8" font-size="10.5">• FL Studio (Pitch woodblock)</text>
+    <text x="14" y="76" fill="#94a3b8" font-size="10.5">• Web Audio Lookahead Engine</text>
+    <text x="14" y="94" fill="#38bdf8" font-size="10" font-weight="600">Кнопка «Імпорт альбому»</text>
+  </g>
+
+  <!-- 2. TrackCard & MiniPlayer -->
+  <g transform="translate(305, 160)">
+    <rect width="235" height="110" rx="10" fill="#0f172a" stroke="#475569" stroke-width="1.2" />
+    <rect width="235" height="4" rx="2" fill="url(#accentGrad)" />
+    <text x="14" y="26" fill="#818cf8" font-size="13" font-weight="700">Мініпрогравач Треків</text>
+    <text x="14" y="44" fill="#94a3b8" font-size="10.5">• Scrubber повзунок з хвилею</text>
+    <text x="14" y="60" fill="#38bdf8" font-size="10.5">• Мітка 1 (Start Loop)</text>
+    <text x="14" y="76" fill="#facc15" font-size="10.5">• Мітка 2 (Focus / Play)</text>
+    <text x="14" y="92" fill="#ef4444" font-size="10.5">• Мітка 3 (End Loop &amp; Auto-cycle)</text>
+  </g>
+
+  <!-- 3. BigBoard Modal -->
+  <g transform="translate(565, 160)">
+    <rect width="225" height="110" rx="10" fill="#0f172a" stroke="#475569" stroke-width="1.2" />
+    <rect width="225" height="4" rx="2" fill="#e2e8f0" />
+    <text x="14" y="26" fill="#f8fafc" font-size="13" font-weight="700">Мультидошки (Boards)</text>
+    <text x="14" y="44" fill="#fbbf24" font-size="10.5">• Головне полотно (Закріплено)</text>
+    <text x="14" y="60" fill="#94a3b8" font-size="10.5">• Створення додаткових дошок</text>
+    <text x="14" y="76" fill="#94a3b8" font-size="10.5">• Перейменування та видалення</text>
+    <text x="14" y="92" fill="#94a3b8" font-size="10.5">• Спільна публічна дошка думок</text>
+  </g>
+
+  <!-- 4. UserMenu & Account ZIP -->
+  <g transform="translate(815, 160)">
+    <rect width="220" height="110" rx="10" fill="#0f172a" stroke="#475569" stroke-width="1.2" />
+    <rect width="220" height="4" rx="2" fill="url(#storageGrad)" />
+    <text x="14" y="26" fill="#34d399" font-size="13" font-weight="700">Профіль &amp; Акаунт ZIP</text>
+    <text x="14" y="44" fill="#94a3b8" font-size="10.5">• «Експортувати акаунт (ZIP)»</text>
+    <text x="14" y="60" fill="#94a3b8" font-size="10.5">• «Імпортувати акаунт (ZIP)»</text>
+    <text x="14" y="76" fill="#94a3b8" font-size="10.5">• JSZip стиснення метаданих</text>
+    <text x="14" y="92" fill="#94a3b8" font-size="10.5">• Toggle аудіоплеєра в альбомах</text>
+  </g>
+
+  <!-- Client Central Hub (App State & AES Crypto) -->
+  <g transform="translate(260, 315)">
+    <rect width="580" height="120" rx="12" fill="#1e1b4b" stroke="#6366f1" stroke-width="1.8" filter="url(#shadow)" />
+    <text x="290" y="32" fill="#ffffff" font-size="15" font-weight="800" text-anchor="middle">APP CORE DISPATCHER &amp; CRYPTO VAULT</text>
+    <text x="290" y="52" fill="#c7d2fe" font-size="11" text-anchor="middle">Криптографічний рушій WebCrypto API: PBKDF2-SHA256 Salt derivation + AES-256-GCM Vault</text>
+    
+    <!-- Mini Pills inside Central Hub -->
+    <rect x="30" y="68" width="150" height="34" rx="6" fill="#312e81" stroke="#4f46e5" />
+    <text x="105" y="89" fill="#e0e7ff" font-size="11" font-weight="600" text-anchor="middle">Session CryptoKey</text>
+
+    <rect x="210" y="68" width="160" height="34" rx="6" fill="#312e81" stroke="#4f46e5" />
+    <text x="290" y="89" fill="#e0e7ff" font-size="11" font-weight="600" text-anchor="middle">State Sync Dispatcher</text>
+
+    <rect x="395" y="68" width="155" height="34" rx="6" fill="#312e81" stroke="#4f46e5" />
+    <text x="472" y="89" fill="#e0e7ff" font-size="11" font-weight="600" text-anchor="middle">ZIP Pack / Unpack</text>
+  </g>
+
+  <!-- Connectors from UI blocks to Core Hub -->
+  <path d="M 172 270 L 172 375 L 260 375" fill="none" stroke="#6366f1" stroke-width="1.5" stroke-dasharray="4 4" marker-end="url(#arrowIndigo)" />
+  <path d="M 422 270 L 422 315" fill="none" stroke="#6366f1" stroke-width="1.5" stroke-dasharray="4 4" marker-end="url(#arrowIndigo)" />
+  <path d="M 677 270 L 677 315" fill="none" stroke="#6366f1" stroke-width="1.5" stroke-dasharray="4 4" marker-end="url(#arrowIndigo)" />
+  <path d="M 925 270 L 925 375 L 840 375" fill="none" stroke="#6366f1" stroke-width="1.5" stroke-dasharray="4 4" marker-end="url(#arrowIndigo)" />
+
+  <!-- ================= TARGET SERVICES (BOTTOM 3 NODES) ================= -->
+
+  <!-- Node 1: Local Storage Engine -->
+  <g transform="translate(40, 560)">
+    <rect width="310" height="200" rx="14" fill="#064e3b" stroke="#059669" stroke-width="1.5" filter="url(#shadow)" />
+    <rect width="310" height="32" rx="14" fill="#047857" />
+    <text x="15" y="21" fill="#ecfdf5" font-size="13" font-weight="800">1. LOCAL ENCRYPTED VAULT</text>
+    <text x="15" y="52" fill="#a7f3d0" font-size="11" font-weight="700">localStorage Keys:</text>
+    <text x="15" y="70" fill="#d1fae5" font-size="10.5" font-family="monospace">• tracker_vault_{username} (AES-256)</text>
+    <text x="15" y="88" fill="#d1fae5" font-size="10.5" font-family="monospace">• tracker_custom_boards (JSON)</text>
+    <text x="15" y="106" fill="#d1fae5" font-size="10.5" font-family="monospace">• tracker_big_board_canvas (Text)</text>
+    <text x="15" y="124" fill="#d1fae5" font-size="10.5" font-family="monospace">• tracker_shared_public_board</text>
+    <text x="15" y="142" fill="#d1fae5" font-size="10.5" font-family="monospace">• tracker_show_mini_player (Bool)</text>
+    <text x="15" y="160" fill="#d1fae5" font-size="10.5" font-family="monospace">• tracker_users_registry (Auth Hash)</text>
+    <text x="15" y="184" fill="#6ee7b7" font-size="10" font-weight="600">Zero-knowledge: доступ тільки за паролем</text>
+  </g>
+
+  <!-- Node 2: Real-time Collaboration Engine -->
+  <g transform="translate(395, 560)">
+    <rect width="310" height="200" rx="14" fill="#0c4a6e" stroke="#0284c7" stroke-width="1.5" filter="url(#shadow)" />
+    <rect width="310" height="32" rx="14" fill="#0369a1" />
+    <text x="15" y="21" fill="#f0f9ff" font-size="13" font-weight="800">2. COLLABORATION ENGINE</text>
+    <text x="15" y="52" fill="#bae6fd" font-size="11" font-weight="700">WebSockets &amp; BroadcastChannel:</text>
+    <text x="15" y="72" fill="#e0f2fe" font-size="10.5">• BroadcastChannel: <tspan fill="#38bdf8" font-family="monospace">tracker_collab_room</tspan></text>
+    <text x="25" y="88" fill="#94a3b8" font-size="9.5">Миттєва синхронізація вкладок і вікон</text>
+    <text x="15" y="108" fill="#e0f2fe" font-size="10.5">• WebSockets Relay: <tspan fill="#38bdf8" font-family="monospace">wss://echo...events</tspan></text>
+    <text x="25" y="124" fill="#94a3b8" font-size="9.5">Cross-device події в реальному часі</text>
+    <text x="15" y="144" fill="#e0f2fe" font-size="10.5">• Heartbeat Presence ping кожні 4s</text>
+    <text x="15" y="162" fill="#e0f2fe" font-size="10.5">• Remote Actions: SYNC_ALBUM, BOARD</text>
+    <text x="15" y="184" fill="#7dd3fc" font-size="10" font-weight="600">Відображення онлайн учасників</text>
+  </g>
+
+  <!-- Node 3: Global Cloud Share Relay -->
+  <g transform="translate(750, 560)">
+    <rect width="310" height="200" rx="14" fill="#78350f" stroke="#d97706" stroke-width="1.5" filter="url(#shadow)" />
+    <rect width="310" height="32" rx="14" fill="#b45309" />
+    <text x="15" y="21" fill="#fffbeb" font-size="13" font-weight="800">3. GLOBAL SHARE CLOUD RELAY</text>
+    <text x="15" y="52" fill="#fde68a" font-size="11" font-weight="700">REST / CORS Gateway (ntfy.sh):</text>
+    <text x="15" y="74" fill="#fef3c7" font-size="10.5">• GET <tspan fill="#fbbf24" font-family="monospace">https://ntfy.sh/{topic}/json?poll=1</tspan></text>
+    <text x="25" y="90" fill="#cbd5e1" font-size="9.5">Опитування вхідної скриньки альбому</text>
+    <text x="15" y="110" fill="#fef3c7" font-size="10.5">• POST <tspan fill="#fbbf24" font-family="monospace">https://ntfy.sh/trackER_inbox_{user}</tspan></text>
+    <text x="25" y="126" fill="#cbd5e1" font-size="9.5">Пряме відправлення альбому за нікнеймом</text>
+    <text x="15" y="148" fill="#fef3c7" font-size="10.5">• URL Hash Bundle: <tspan fill="#fbbf24" font-family="monospace">#share={base64}</tspan></text>
+    <text x="25" y="164" fill="#cbd5e1" font-size="9.5">Миттєве відкриття через direct link</text>
+    <text x="15" y="184" fill="#fde68a" font-size="10" font-weight="600">Cross-network обмін без реєстрації сервера</text>
+  </g>
+
+  <!-- Downward Connectors from Central Core to Bottom Nodes -->
+  <!-- To Local Vault -->
+  <path d="M 370 435 L 370 495 L 195 495 L 195 560" fill="none" stroke="#34d399" stroke-width="2" marker-end="url(#arrowGreen)" />
+  <rect x="220" y="483" width="90" height="22" rx="4" fill="#064e3b" stroke="#059669" />
+  <text x="265" y="498" fill="#a7f3d0" font-size="10" font-weight="700" text-anchor="middle">Local I/O</text>
+
+  <!-- To Collaboration Engine -->
+  <path d="M 550 435 L 550 560" fill="none" stroke="#38bdf8" stroke-width="2" marker-end="url(#arrowBlue)" />
+  <rect x="505" y="483" width="90" height="22" rx="4" fill="#0c4a6e" stroke="#0284c7" />
+  <text x="550" y="498" fill="#bae6fd" font-size="10" font-weight="700" text-anchor="middle">WS / Broadcast</text>
+
+  <!-- To Cloud Relay -->
+  <path d="M 730 435 L 730 495 L 905 495 L 905 560" fill="none" stroke="#fbbf24" stroke-width="2" marker-end="url(#arrowAmber)" />
+  <rect x="785" y="483" width="90" height="22" rx="4" fill="#78350f" stroke="#d97706" />
+  <text x="830" y="498" fill="#fde68a" font-size="10" font-weight="700" text-anchor="middle">HTTPS / REST</text>
+
+</svg>
+
